@@ -1,0 +1,10 @@
+Revision 4905 from [1]. Placeholder repository for version control,
+and frankly, so I don't have to deal with Subversion.
+
+Quick start:
+ * download GCC 4.4.4 from [2] and place it under `/usr/local/arm`;
+ * install the following 32-bit libraries: zlib, bzip2, ncurses, gcc-libs
+ * check output from EPOSMote III with `sudo cat /dev/ttyACM0`
+
+[1] https://epos.lisha.ufsc.br/svn/epos2/branches/arm/
+[2] https://epos.lisha.ufsc.br/dl88

@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+
+# To get an unencrypted PEM (without passphrase):
+# openssl rsa -in certificate.pem -out certificate_unencrypted.pem
+
+import os, sys, time, serial, argparse, requests
+from struct import unpack, unpack_from, pack_into
+from base64 import b64encode
+
+parser = argparse.ArgumentParser(description='EPOS Serial->IoT Gateway')
+
+parser.add_argument('-d','--dev', help='EPOSMote III device descriptor file', default='/dev/ttyACM0')
+parser.add_argument('-t','--timeout', help='Timeout for reading from mote', default=600)
+parser.add_argument('-u','--url', help='Post URL', default='https://iot.lisha.ufsc.br/api/put.php')
+parser.add_argument('-a','--attach_url', help='Attach URL', default='https://iot.lisha.ufsc.br/api/attach.php')
+parser.add_argument('-s','--slice_mngr_url', help='Slice Manager URL', default='')
+parser.add_argument('-j','--json', help='Use JSON API', action='store_true')
+parser.add_argument('-D','--domain', help='Data domain', default='')
+parser.add_argument('-U','--username', help='Data domain username', default='')
+parser.add_argument('-P','--password', help='User password', default='')
+parser.add_argument('-c','--certificate', help='Client certificate', default='')
+
+
+args = vars(parser.parse_args())
+DEV = args['dev']
+TIMEOUT = int(args['timeout'])
+URL = args['url']
+ATTACH_URL = args['attach_url']
+MY_CERTIFICATE = [args['certificate']+'.pem', args['certificate']+'.key']
+JSON = args['json']
+SLICE_MNGR_URL = args['slice_mngr_url']
+
+DOMAIN   = args['domain']
+USERNAME = args['username']
+PASSWORD = args['password']
+
+if DOMAIN or USERNAME or PASSWORD:
+    if JSON:
+        CREDENTIALS = {}
+        if DOMAIN:
+            CREDENTIALS['domain'] = DOMAIN
+        if USERNAME:
+            CREDENTIALS['username'] = USERNAME
+        if PASSWORD:
+            CREDENTIALS['password'] = PASSWORD
+    else:
+        if DOMAIN and USERNAME and PASSWORD:
+            s_d = s_u = s_p = bytearray(1)
+            pack_into('<B', s_d, 0, len(DOMAIN))
+            pack_into('<B', s_u, 0, len(USERNAME))
+            pack_into('<B', s_p, 0, len(PASSWORD))
+            CREDENTIALS = bytes(s_d)+bytes(DOMAIN, 'utf-8')+bytes(s_u)+bytes(USERNAME, 'utf-8')+bytes(s_p)+bytes(PASSWORD, 'utf-8')
+        else:
+            CREDENTIALS = False
+else:
+    CREDENTIALS = False
+
+if JSON:
+    import json
+    import struct
+
+def init_mote():
+    global DEV
+    global TIMEOUT
+
+    ok = False
+    while not ok:
+        try:
+            print("Waiting for", DEV, "to appear")
+            while not os.path.exists(DEV) or not os.access(DEV, os.W_OK):
+                time.sleep(3)
+            mote = serial.Serial(DEV, 115200, timeout = TIMEOUT, write_timeout = 10)
+            mote.close()
+            mote.open()
+            ok = True
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            print("Exception caught:", e, file=sys.stderr)
+            ok = False
+            time.sleep(3)
+
+    print("Mote open", file=sys.stderr)
+    ts = bytes(str(int(time.time() * 1000000)), 'ascii')
+    try:
+        mote.write(ts + b'X')
+        print("epoch written", file=sys.stderr)
+    except KeyboardInterrupt:
+        raise
+    except serial.serialutil.SerialTimeoutException:
+        pass
+
+    print("init_mote() done", file=sys.stderr)
+    return mote
+
+def series_to_json(data):
+    offset = 0
+    version, unit, x, y, z, r, t0, t1, dev = unpack_from('<BIiiiIQQL',data,offset)
+    ret_obj = {
+            'series' :
+            {
+                'version' : version,
+                'unit' : unit,
+                'x' : x,
+                'y' : y,
+                'z' : z,
+                'r' : r,
+                't0' : t0,
+                't1' : t1,
+                'dev' : dev
+            }
+        }
+
+    if CREDENTIALS:
+        ret_obj['credentials'] = CREDENTIALS
+    return json.dumps(ret_obj)
+
+def smartdata_to_json(data):
+    offset = 0
+    version,unit = unpack_from('<BI',data,offset)
+    offset = offset+1+4
+
+    if (unit >> 31) == 1:
+        # SI Unit
+        size_v = 8;
+        value  = unpack("<d", data[offset:offset+size_v])[0]
+    else:
+        # Digital Unit
+        size_v = unit & 0xFFFF;
+        value  = unpack("%ds"%size_v, data[offset:offset+size_v])[0]
+        value = b64encode(value).decode('utf-8')
+    offset = offset + size_v;
+
+    error, confidence, x, y, z, t, dev = unpack_from('<2B3iQL',data,offset)
+
+    ret_obj = {
+            'smartdata' :
+            [
+                {
+                    'version' : version,
+                    'unit' : unit,
+                    'value' : value,
+                    'error' : error,
+                    'confidence' : confidence,
+                    'x' : x,
+                    'y' : y,
+                    'z' : z,
+                    't' : t,
+                    'dev' : dev
+                }
+            ]
+        }
+
+    if CREDENTIALS:
+        ret_obj['credentials'] = CREDENTIALS
+    return json.dumps(ret_obj)
+
+
+if __name__ == "__main__":
+    mote = init_mote()
+
+    session = requests.Session()
+    if JSON:
+        session.headers = {'Content-type' : 'application/json'}
+    else:
+        session.headers = {'Connection': 'close', 'Content-type' : 'application/octet-stream', 'Content-length' : 0}
+
+    if MY_CERTIFICATE[0] != '.pem':
+        session.cert = MY_CERTIFICATE
+
+    while True:
+        sys.stdout.flush()
+        X = 0
+        db_x = b''
+        data = b''
+        try:
+            db_x = mote.read(1)
+            while X < 3:
+                byte = mote.read(1)
+                data = data + byte
+                if byte == b'X':
+                    X = X + 1
+                else:
+                    X = 0
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            print("Exception caught:", e, file=sys.stderr)
+            data = b''
+
+        if X == 3 and len(data):
+            data = data[:-X] # discard the X's at the end
+        #print(data, file=sys.stderr)
+
+        if not len(data):
+            mote.close()
+            mote = init_mote()
+        else:
+            try:
+                if not JSON:
+                    if CREDENTIALS:
+                        data = CREDENTIALS+data
+                    session.headers['Content-length'] = str(len(data))
+
+                if db_x == b'S': # DB_Series
+                    if JSON:
+                         data = series_to_json(data)
+                    #print('series: ', data, sep='', file=sys.stderr)
+                    response = session.post(ATTACH_URL, data)
+                    print("Attach [", str(response.status_code), "] (", len(data), ") ", data, sep='')
+
+                elif db_x == b'R': # DB_Record
+                    if JSON:
+                        data = smartdata_to_json(data)
+                    #print('smartdata: ', data, sep='', file=sys.stderr)
+                    response = session.post(URL, data)
+                    print("Put [", str(response.status_code), "] (", len(data), ") ", data, sep='')
+
+                    if SLICE_MNGR_URL != '':
+                        response = session.post(SLICE_MNGR_URL, data)
+                        print("Put in Slice [", str(response.status_code), "] (", len(data), ") ", data, sep='')
+                else:
+                    print("Invalid data: ", data, file=sys.stderr)
+            except Exception as e:
+                print("Exception caught:", e, file=sys.stderr)
