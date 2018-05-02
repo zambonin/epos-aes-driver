@@ -1,0 +1,23 @@
+Hardware accelerated implementation for the AES cipher inside a Cortex-M3
+CPU, model CC2538, using the Embedded Parallel Operating System from [1].
+
+To actually compile anything, download GCC 4.4.4 from [2] and place it under
+`/usr/local/arm`. You also need `zlib`, `bzip2`, `ncurses` and `gcc-libs` as
+32-bit libraries, as well as `python3-pyserial`.
+
+Create an application and its traits file inside the `app` folder, as seen in
+the examples. It can be compiled with
+
+  # $APP is the name of the .cc file, no extension
+  make APPLICATION=$APP
+
+To run in a virtual machine (`qemu-system-arm`), or flash the firmware to a
+real EPOSMote III, invoke the `run` and `flash` rules. One will generally
+want to clean everything before each compilation with `make -j veryclean`.
+
+To check output from the board, `sudo cat /dev/ttyACM0` should work. For
+further instructions, refer to [3].
+
+[1] https://epos.lisha.ufsc.br/svn/epos2/branches/arm/
+[2] https://epos.lisha.ufsc.br/dl88
+[3] https://epos.lisha.ufsc.br/IoT+with+EPOS#Running_EPOS_on_EPOSMote_III
