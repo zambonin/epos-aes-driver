@@ -76,12 +76,12 @@ clean1: FORCE
 		(cd app && $(MAKECLEAN))
 		(cd img && $(MAKECLEAN))
 		(cd src && $(MAKECLEAN))
-		find $(LIB) -maxdepth 1 -type f -exec $(CLEAN) {} \;
+		find $(LIB) -maxdepth 1 -type f -not -name .gitkeep -exec $(CLEAN) {} \;
 
 veryclean: clean
 		(cd tools && $(MAKECLEAN))
-		find $(LIB) -maxdepth 1 -type f -exec $(CLEAN) {} \;
-		find $(BIN) -maxdepth 1 -type f -exec $(CLEAN) {} \;
+		find $(LIB) -maxdepth 1 -type f -not -name .gitkeep -exec $(CLEAN) {} \;
+		find $(BIN) -maxdepth 1 -type f -not -name .gitkeep -exec $(CLEAN) {} \;
 		find $(APP) -maxdepth 1 -type f -perm -755 -exec $(CLEAN) {} \;
 		find $(IMG) -name "*.img" -exec $(CLEAN) {} \;
 		find $(IMG) -name "*.out" -exec $(CLEAN) {} \;
