@@ -1,375 +1,165 @@
 // EPOS Poly1305-AES Message Authentication Code Component Test Program
 
-#include <poly1305.h>
+#include <aes.h>
 #include <utility/ostream.h>
+#include <utility/poly1305.h>
 #include <utility/random.h>
 
 using namespace EPOS;
 
 OStream cout;
 
-static const unsigned int ITERATIONS = 100;
-static const unsigned int MESSAGE_SIZE_MAX = 200;
+static const unsigned int CIPHER_BLOCK_SIZE = 16;
+static const unsigned int ITERATIONS = 256;
+static const unsigned int MSG_SIZE_MAX = 512;
 
-unsigned int test_known_vectors();
+typedef struct {
+  unsigned char n[CIPHER_BLOCK_SIZE], k[CIPHER_BLOCK_SIZE],
+      r[CIPHER_BLOCK_SIZE], expected[CIPHER_BLOCK_SIZE], m[MSG_SIZE_MAX], sz;
+} poly1305_example_test;
 
-int main()
-{
-    unsigned int seed = Random::random();
+unsigned int test_known_vectors(), test_random_vectors();
 
-    cout << "EPOS Poly1305 Test" << endl;
-    cout << "Configuration: " << endl;
-    cout << "Traits<Software_AES<0>>::enabled = " << Traits<Software_AES<0>>::enabled << endl;
-    cout << "Cipher::KEY_SIZE = " << Cipher::KEY_SIZE << endl;
-    cout << "Random seed = " << seed << endl;
-    cout << "Iterations = " << ITERATIONS << endl;
-    cout << "Maximum message size = " << MESSAGE_SIZE_MAX << endl;
+int main() {
+  unsigned int seed = Random::random();
+  Random::seed(seed);
 
-    unsigned int tests_failed = 0;
+  cout << "EPOS Poly1305 Test" << endl;
+  cout << "Random seed = " << seed << endl;
+  cout << "Iterations = " << ITERATIONS << endl;
+  cout << "Maximum message size = " << MSG_SIZE_MAX << endl << endl;
 
-    Random::seed(seed);
-
-    cout << endl;
-    tests_failed += test_known_vectors();
-
-    if(tests_failed > 0) {
-        cout << "Poly1305 FAILED to produce " << tests_failed << " known vectors. Aborting." << endl;
-        cout << endl;
-        cout << "Tests finished with " << tests_failed << " error" << (tests_failed > 1 ? "s" : "") << " detected." << endl;
-        cout << endl;
-    }
-
-    for(unsigned int it = 0; it < ITERATIONS; it++) {
-        unsigned char nonce[16];
-        unsigned char k[16];
-        unsigned char r[16];
-        unsigned char mac[16];
-        unsigned char msg[MESSAGE_SIZE_MAX];
-        unsigned int msg_len = Random::random() % MESSAGE_SIZE_MAX;
-        for(unsigned int i = 0; i < 16; i++) {
-            k[i] = Random::random();
-            r[i] = Random::random();
-            nonce[i] = Random::random();
-        }
-        for(unsigned int i = 0; i < msg_len; i++) {
-            msg[i] = Random::random();
-        }
-
-        cout << endl;
-        cout << "Iteration " << it << endl;
-
-        cout << "nonce =";
-        for(unsigned int i = 0; i < 16; i++)
-            cout << " " << hex << static_cast<unsigned int>(nonce[i]);
-        cout << endl;
-
-        cout << "k =";
-        for(unsigned int i = 0; i < 16; i++)
-            cout << " " << hex << static_cast<unsigned int>(k[i]);
-        cout << endl;
-
-        cout << "r =";
-        for(unsigned int i = 0; i < 16; i++)
-            cout << " " << hex << static_cast<unsigned int>(r[i]);
-        cout << endl;
-
-        cout << "Message size = " << msg_len << endl;
-
-        cout << "Message = ";
-        for(unsigned int i = 0; i < msg_len; i++)
-            cout << " " << hex << static_cast<unsigned int>(msg[i]);
-        cout << endl;
-
-        cout << "Creating Poly1305 object...";
-        Poly1305 poly(k, r);
-        cout << "done" << endl;
-
-        cout << "Stamping message...";
-        poly.stamp(mac, nonce, msg, msg_len);
-        cout << "done" << endl;
-        cout << "mac =";
-        for(unsigned int i = 0; i < 16; i++)
-            cout << " " << hex << static_cast<unsigned int>(mac[i]);
-        cout << endl;
-
-
-        cout << "Verifying MAC...";
-        bool ok = poly.verify(mac, nonce, msg, msg_len);
-        tests_failed += !ok;
-        if(ok)
-            cout << "OK!" << endl;
-        else
-            cout << "ERROR!" << endl;
-
-
-        cout << "Verifying with wrong MAC...";
-        unsigned char wrong_mac[16];
-        for(unsigned int i = 0; i < 16; i++)
-            wrong_mac[i] = mac[i];
-        wrong_mac[Random::random() % 16u]++;
-        ok = !poly.verify(wrong_mac, nonce, msg, msg_len);
-        tests_failed += !ok;
-        if(ok)
-            cout << "OK!" << endl;
-        else
-            cout << "ERROR!" << endl;
-
-
-        cout << "Verifying with wrong nonce...";
-        unsigned char wrong_nonce[16];
-        for(unsigned int i = 0; i < 16; i++)
-            wrong_nonce[i] = nonce[i];
-        wrong_nonce[Random::random() % 16u]++;
-        ok = !poly.verify(mac, wrong_nonce, msg, msg_len);
-        tests_failed += !ok;
-        if(ok)
-            cout << "OK!" << endl;
-        else
-            cout << "ERROR!" << endl;
-
-
-        cout << "Verifying with wrong Message...";
-        if(msg_len == 0) 
-            cout << "SKIPPED! (Message length == 0)";
-        else {
-            msg[Random::random() % msg_len]++;
-            ok = !poly.verify(mac, nonce, msg, msg_len);
-            tests_failed += !ok;
-            if(ok)
-                cout << "OK!" << endl;
-            else
-                cout << "ERROR!" << endl;
-        }
-    }
-
-    cout << endl;
-    cout << "Tests finished with " << tests_failed << " error" << (tests_failed > 1 ? "s" : "") << " detected." << endl;
-    cout << endl;
-
-    return 0;
+  return test_known_vectors() + test_random_vectors();
 }
 
-unsigned int test_known_vectors()
-{
-    unsigned int fails = 0;
+unsigned int test_random_vectors() {
+  unsigned int i, j, index, fails = 0,
+                            msg_len = Random::random() % (MSG_SIZE_MAX + 1);
+  Poly1305<AES<CIPHER_BLOCK_SIZE>> p;
+  poly1305_example_test ex;
 
-	unsigned char out[16];
-	unsigned char expected[16];
-	unsigned char n[16];
-	unsigned char s[16];
-	unsigned char k[16];
-	unsigned char r[16];
-	unsigned char m[64];
-	unsigned int sz;
-	unsigned int i;
+  ex.sz = msg_len;
+  cout << "Testing random vectors... " << endl;
+  for (i = 0; i < ITERATIONS; ++i) {
+    for (j = 0; j < CIPHER_BLOCK_SIZE; ++j) {
+      ex.n[j] = Random::random();
+      ex.k[j] = Random::random();
+      ex.r[j] = Random::random();
+    }
+    for (j = 0; j < msg_len; ++j) {
+      ex.m[j] = Random::random();
+    }
 
+    p.k(ex.k);
+    p.r(ex.r);
 
-	// Test vector 1
-    cout << "Testing known vector 1...";
-	i=0;
-	m[i++] = 0xf3; m[i++] = 0xf6; 
-	sz=i;
-	i=0;
-	k[i++]=0xec; k[i++]=0x07; k[i++]=0x4c; k[i++]=0x83;
-	k[i++]=0x55; k[i++]=0x80; k[i++]=0x74; k[i++]=0x17;
-	k[i++]=0x01; k[i++]=0x42; k[i++]=0x5b; k[i++]=0x62;
-	k[i++]=0x32; k[i++]=0x35; k[i++]=0xad; k[i++]=0xd6;
-	i=0;
-	r[i++]=0x85; r[i++]=0x1f; r[i++]=0xc4; r[i++]=0x0c;
-	r[i++]=0x34; r[i++]=0x67; r[i++]=0xac; r[i++]=0x0b;
-	r[i++]=0xe0; r[i++]=0x5c; r[i++]=0xc2; r[i++]=0x04;
-	r[i++]=0x04; r[i++]=0xf3; r[i++]=0xf7; r[i++]=0x00;
-	i=0;
-	n[i++]=0xfb; n[i++]=0x44; n[i++]=0x73; n[i++]=0x50;
-	n[i++]=0xc4; n[i++]=0xe8; n[i++]=0x68; n[i++]=0xc5;
-	n[i++]=0x2a; n[i++]=0xc3; n[i++]=0x27; n[i++]=0x5c;
-	n[i++]=0xf9; n[i++]=0xd4; n[i++]=0x32; n[i++]=0x7e;
-	i=0;
-	s[i++]=0x58; s[i++]=0x0b; s[i++]=0x3b; s[i++]=0x0f;
-	s[i++]=0x94; s[i++]=0x47; s[i++]=0xbb; s[i++]=0x1e;
-	s[i++]=0x69; s[i++]=0xd0; s[i++]=0x95; s[i++]=0xb5;
-	s[i++]=0x92; s[i++]=0x8b; s[i++]=0x6d; s[i++]=0xbc;
-	i=0;
-	expected[i++]=0xf4; expected[i++]=0xc6; expected[i++]=0x33; expected[i++]=0xc3;
-	expected[i++]=0x04; expected[i++]=0x4f; expected[i++]=0xc1; expected[i++]=0x45;
-	expected[i++]=0xf8; expected[i++]=0x4f; expected[i++]=0x33; expected[i++]=0x5c;
-	expected[i++]=0xb8; expected[i++]=0x19; expected[i++]=0x53; expected[i++]=0xde;
+    p.stamp(ex.expected, ex.n, ex.m, ex.sz);
+    fails +=
+        static_cast<unsigned int>(!p.verify(ex.expected, ex.n, ex.m, ex.sz));
 
-    Poly1305 poly(k, r);
-    poly.stamp(out, n, m, sz);
+    { // test modified output
+      index = Random::random() % CIPHER_BLOCK_SIZE;
+      ex.expected[index]++;
+      fails +=
+          static_cast<unsigned int>(p.verify(ex.expected, ex.n, ex.m, ex.sz));
+    }
 
-    bool ok = true;
-	for(i=0;i<16;i++)
-		if(out[i] != expected[i]) {
-            ok = false;
-            break;
-        }
+    { // test modified nonce
+      index = Random::random() % CIPHER_BLOCK_SIZE;
+      ex.n[index]++;
+      fails +=
+          static_cast<unsigned int>(p.verify(ex.expected, ex.n, ex.m, ex.sz));
+    }
 
-    ok &= poly.verify(out, n, m, sz);
-    fails += !ok;
-    cout << (ok ? "OK!" : "ERROR!") << endl;
+    { // test modified message
+      index = Random::random() % MSG_SIZE_MAX;
+      ex.m[index]++;
+      fails +=
+          static_cast<unsigned int>(p.verify(ex.expected, ex.n, ex.m, ex.sz));
+    }
+  }
 
+  cout << "Random vector test has " << fails << " fails." << endl << endl;
+  return fails;
+}
 
-	// Test vector 2
-    cout << "Testing known vector 2...";
-	i=0;
-	sz=i;
-	i=0;
-	k[i++]=0x75; k[i++]=0xde; k[i++]=0xaa; k[i++]=0x25;
-	k[i++]=0xc0; k[i++]=0x9f; k[i++]=0x20; k[i++]=0x8e;
-	k[i++]=0x1d; k[i++]=0xc4; k[i++]=0xce; k[i++]=0x6b;
-	k[i++]=0x5c; k[i++]=0xad; k[i++]=0x3f; k[i++]=0xbf;
-	i=0;
-	r[i++]=0xa0; r[i++]=0xf3; r[i++]=0x08; r[i++]=0x00;
-	r[i++]=0x00; r[i++]=0xf4; r[i++]=0x64; r[i++]=0x00;
-	r[i++]=0xd0; r[i++]=0xc7; r[i++]=0xe9; r[i++]=0x07;
-	r[i++]=0x6c; r[i++]=0x83; r[i++]=0x44; r[i++]=0x03;
-	i=0;
-	n[i++]=0x61; n[i++]=0xee; n[i++]=0x09; n[i++]=0x21;
-	n[i++]=0x8d; n[i++]=0x29; n[i++]=0xb0; n[i++]=0xaa;
-	n[i++]=0xed; n[i++]=0x7e; n[i++]=0x15; n[i++]=0x4a;
-	n[i++]=0x2c; n[i++]=0x55; n[i++]=0x09; n[i++]=0xcc;
-	i=0;
-	s[i++]=0xdd; s[i++]=0x3f; s[i++]=0xab; s[i++]=0x22;
-	s[i++]=0x51; s[i++]=0xf1; s[i++]=0x1a; s[i++]=0xc7;
-	s[i++]=0x59; s[i++]=0xf0; s[i++]=0x88; s[i++]=0x71;
-	s[i++]=0x29; s[i++]=0xcc; s[i++]=0x2e; s[i++]=0xe7;
-	i=0;
-	expected[i++]=0xdd; expected[i++]=0x3f; expected[i++]=0xab; expected[i++]=0x22;
-	expected[i++]=0x51; expected[i++]=0xf1; expected[i++]=0x1a; expected[i++]=0xc7;
-	expected[i++]=0x59; expected[i++]=0xf0; expected[i++]=0x88; expected[i++]=0x71;
-	expected[i++]=0x29; expected[i++]=0xcc; expected[i++]=0x2e; expected[i++]=0xe7;
+unsigned int test_known_vectors() {
+  const poly1305_example_test examples[] = {
+      {
+          {0xfb, 0x44, 0x73, 0x50, 0xc4, 0xe8, 0x68, 0xc5, 0x2a, 0xc3, 0x27,
+           0x5c, 0xf9, 0xd4, 0x32, 0x7e},
+          {0xec, 0x07, 0x4c, 0x83, 0x55, 0x80, 0x74, 0x17, 0x01, 0x42, 0x5b,
+           0x62, 0x32, 0x35, 0xad, 0xd6},
+          {0x85, 0x1f, 0xc4, 0x0c, 0x34, 0x67, 0xac, 0x0b, 0xe0, 0x5c, 0xc2,
+           0x04, 0x04, 0xf3, 0xf7, 0x00},
+          {0xf4, 0xc6, 0x33, 0xc3, 0x04, 0x4f, 0xc1, 0x45, 0xf8, 0x4f, 0x33,
+           0x5c, 0xb8, 0x19, 0x53, 0xde},
+          {0xf3, 0xf6},
+          2,
+      },
+      {
+          {0x61, 0xee, 0x09, 0x21, 0x8d, 0x29, 0xb0, 0xaa, 0xed, 0x7e, 0x15,
+           0x4a, 0x2c, 0x55, 0x09, 0xcc},
+          {0x75, 0xde, 0xaa, 0x25, 0xc0, 0x9f, 0x20, 0x8e, 0x1d, 0xc4, 0xce,
+           0x6b, 0x5c, 0xad, 0x3f, 0xbf},
+          {0xa0, 0xf3, 0x08, 0x00, 0x00, 0xf4, 0x64, 0x00, 0xd0, 0xc7, 0xe9,
+           0x07, 0x6c, 0x83, 0x44, 0x03},
+          {0xdd, 0x3f, 0xab, 0x22, 0x51, 0xf1, 0x1a, 0xc7, 0x59, 0xf0, 0x88,
+           0x71, 0x29, 0xcc, 0x2e, 0xe7},
+          0,
+      },
+      {
+          {0xae, 0x21, 0x2a, 0x55, 0x39, 0x97, 0x29, 0x59, 0x5d, 0xea, 0x45,
+           0x8b, 0xc6, 0x21, 0xff, 0x0e},
+          {0x6a, 0xcb, 0x5f, 0x61, 0xa7, 0x17, 0x6d, 0xd3, 0x20, 0xc5, 0xc1,
+           0xeb, 0x2e, 0xdc, 0xdc, 0x74},
+          {0x48, 0x44, 0x3d, 0x0b, 0xb0, 0xd2, 0x11, 0x09, 0xc8, 0x9a, 0x10,
+           0x0b, 0x5c, 0xe2, 0xc2, 0x08},
+          {0x0e, 0xe1, 0xc1, 0x6b, 0xb7, 0x3f, 0x0f, 0x4f, 0xd1, 0x98, 0x81,
+           0x75, 0x3c, 0x01, 0xcd, 0xbe},
+          {0x66, 0x3c, 0xea, 0x19, 0x0f, 0xfb, 0x83, 0xd8, 0x95, 0x93, 0xf3,
+           0xf4, 0x76, 0xb6, 0xbc, 0x24, 0xd7, 0xe6, 0x79, 0x10, 0x7e, 0xa2,
+           0x6a, 0xdb, 0x8c, 0xaf, 0x66, 0x52, 0xd0, 0x65, 0x61, 0x36},
+          32,
+      },
+      {
+          {0x9a, 0xe8, 0x31, 0xe7, 0x43, 0x97, 0x8d, 0x3a, 0x23, 0x52, 0x7c,
+           0x71, 0x28, 0x14, 0x9e, 0x3a},
+          {0xe1, 0xa5, 0x66, 0x8a, 0x4d, 0x5b, 0x66, 0xa5, 0xf6, 0x8c, 0xc5,
+           0x42, 0x4e, 0xd5, 0x98, 0x2d},
+          {0x12, 0x97, 0x6a, 0x08, 0xc4, 0x42, 0x6d, 0x0c, 0xe8, 0xa8, 0x24,
+           0x07, 0xc4, 0xf4, 0x82, 0x07},
+          {0x51, 0x54, 0xad, 0x0d, 0x2c, 0xb2, 0x6e, 0x01, 0x27, 0x4f, 0xc5,
+           0x11, 0x48, 0x49, 0x1f, 0x1b},
+          {0xab, 0x08, 0x12, 0x72, 0x4a, 0x7f, 0x1e, 0x34, 0x27, 0x42, 0xcb,
+           0xed, 0x37, 0x4d, 0x94, 0xd1, 0x36, 0xc6, 0xb8, 0x79, 0x5d, 0x45,
+           0xb3, 0x81, 0x98, 0x30, 0xf2, 0xc0, 0x44, 0x91, 0xfa, 0xf0, 0x99,
+           0x0c, 0x62, 0xe4, 0x8b, 0x80, 0x18, 0xb2, 0xc3, 0xe4, 0xa0, 0xfa,
+           0x31, 0x34, 0xcb, 0x67, 0xfa, 0x83, 0xe1, 0x58, 0xc9, 0x94, 0xd9,
+           0x61, 0xc4, 0xcb, 0x21, 0x09, 0x5c, 0x1b, 0xf9},
+          63,
+      },
+  };
 
-    poly.k(k);
-    poly.r(r);
-    poly.stamp(out, n, m, sz);
+  unsigned char out[CIPHER_BLOCK_SIZE];
+  unsigned int fails = 0, i, j;
+  bool ok;
+  Poly1305<AES<CIPHER_BLOCK_SIZE>> p;
 
-    ok = true;
-	for(i=0;i<16;i++)
-		if(out[i] != expected[i]) {
-            ok = false;
-            break;
-        }
+  cout << "Testing known vectors... " << endl;
+  for (i = 0; i < sizeof(examples) / sizeof(examples[0]); ++i) {
+    p.k(examples[i].k);
+    p.r(examples[i].r);
+    p.stamp(out, examples[i].n, examples[i].m, examples[i].sz);
 
-    ok &= poly.verify(out, n, m, sz);
-    fails += !ok;
-    cout << (ok ? "OK!" : "ERROR!") << endl;
+    ok = p.verify(out, examples[i].n, examples[i].m, examples[i].sz);
+    for (j = 0; j < CIPHER_BLOCK_SIZE; ++j) {
+      ok &= (out[j] == examples[i].expected[j]);
+    }
 
+    fails += static_cast<unsigned int>(!ok);
+  }
 
-	// Test vector 3
-    cout << "Testing known vector 3...";
-	i=0;
-	m[i++]=0x66; m[i++]=0x3c; m[i++]=0xea; m[i++]=0x19;
-	m[i++]=0x0f; m[i++]=0xfb; m[i++]=0x83; m[i++]=0xd8;
-	m[i++]=0x95; m[i++]=0x93; m[i++]=0xf3; m[i++]=0xf4;
-	m[i++]=0x76; m[i++]=0xb6; m[i++]=0xbc; m[i++]=0x24;
-	m[i++]=0xd7; m[i++]=0xe6; m[i++]=0x79; m[i++]=0x10;
-	m[i++]=0x7e; m[i++]=0xa2; m[i++]=0x6a; m[i++]=0xdb;
-	m[i++]=0x8c; m[i++]=0xaf; m[i++]=0x66; m[i++]=0x52;
-	m[i++]=0xd0; m[i++]=0x65; m[i++]=0x61; m[i++]=0x36;
-	sz=i;
-	i=0;
-	k[i++]=0x6a; k[i++]=0xcb; k[i++]=0x5f; k[i++]=0x61;
-	k[i++]=0xa7; k[i++]=0x17; k[i++]=0x6d; k[i++]=0xd3;
-	k[i++]=0x20; k[i++]=0xc5; k[i++]=0xc1; k[i++]=0xeb;
-	k[i++]=0x2e; k[i++]=0xdc; k[i++]=0xdc; k[i++]=0x74;
-	i=0;
-	r[i++]=0x48; r[i++]=0x44; r[i++]=0x3d; r[i++]=0x0b;
-	r[i++]=0xb0; r[i++]=0xd2; r[i++]=0x11; r[i++]=0x09;
-	r[i++]=0xc8; r[i++]=0x9a; r[i++]=0x10; r[i++]=0x0b;
-	r[i++]=0x5c; r[i++]=0xe2; r[i++]=0xc2; r[i++]=0x08;
-	i=0;
-	n[i++]=0xae; n[i++]=0x21; n[i++]=0x2a; n[i++]=0x55;
-	n[i++]=0x39; n[i++]=0x97; n[i++]=0x29; n[i++]=0x59;
-	n[i++]=0x5d; n[i++]=0xea; n[i++]=0x45; n[i++]=0x8b;
-	n[i++]=0xc6; n[i++]=0x21; n[i++]=0xff; n[i++]=0x0e;
-	i=0;
-	s[i++]=0x83; s[i++]=0x14; s[i++]=0x9c; s[i++]=0x69;
-	s[i++]=0xb5; s[i++]=0x61; s[i++]=0xdd; s[i++]=0x88;
-	s[i++]=0x29; s[i++]=0x8a; s[i++]=0x17; s[i++]=0x98;
-	s[i++]=0xb1; s[i++]=0x07; s[i++]=0x16; s[i++]=0xef;
-	i=0;
-	expected[i++]=0x0e; expected[i++]=0xe1; expected[i++]=0xc1; expected[i++]=0x6b;
-	expected[i++]=0xb7; expected[i++]=0x3f; expected[i++]=0x0f; expected[i++]=0x4f;
-	expected[i++]=0xd1; expected[i++]=0x98; expected[i++]=0x81; expected[i++]=0x75;
-	expected[i++]=0x3c; expected[i++]=0x01; expected[i++]=0xcd; expected[i++]=0xbe;
-
-    poly.k(k);
-    poly.r(r);
-    poly.stamp(out, n, m, sz);
-
-    ok = true;
-	for(i=0;i<16;i++)
-		if(out[i] != expected[i]) {
-            ok = false;
-            break;
-        }
-
-    ok &= poly.verify(out, n, m, sz);
-    fails += !ok;
-    cout << (ok ? "OK!" : "ERROR!") << endl;
-
-
-	// Test vector 4
-    cout << "Testing known vector 4...";
-	i=0;
-	m[i++]=0xab; m[i++]=0x08; m[i++]=0x12; m[i++]=0x72;
-	m[i++]=0x4a; m[i++]=0x7f; m[i++]=0x1e; m[i++]=0x34;
-	m[i++]=0x27; m[i++]=0x42; m[i++]=0xcb; m[i++]=0xed;
-	m[i++]=0x37; m[i++]=0x4d; m[i++]=0x94; m[i++]=0xd1;
-	m[i++]=0x36; m[i++]=0xc6; m[i++]=0xb8; m[i++]=0x79;
-	m[i++]=0x5d; m[i++]=0x45; m[i++]=0xb3; m[i++]=0x81;
-	m[i++]=0x98; m[i++]=0x30; m[i++]=0xf2; m[i++]=0xc0;
-	m[i++]=0x44; m[i++]=0x91; m[i++]=0xfa; m[i++]=0xf0;
-	m[i++]=0x99; m[i++]=0x0c; m[i++]=0x62; m[i++]=0xe4;
-	m[i++]=0x8b; m[i++]=0x80; m[i++]=0x18; m[i++]=0xb2;
-	m[i++]=0xc3; m[i++]=0xe4; m[i++]=0xa0; m[i++]=0xfa;
-	m[i++]=0x31; m[i++]=0x34; m[i++]=0xcb; m[i++]=0x67;
-	m[i++]=0xfa; m[i++]=0x83; m[i++]=0xe1; m[i++]=0x58;
-	m[i++]=0xc9; m[i++]=0x94; m[i++]=0xd9; m[i++]=0x61;
-	m[i++]=0xc4; m[i++]=0xcb; m[i++]=0x21; m[i++]=0x09;
-	m[i++]=0x5c; m[i++]=0x1b; m[i++]=0xf9; 
-	sz = i;
-	i=0;
-	k[i++]=0xe1; k[i++]=0xa5; k[i++]=0x66; k[i++]=0x8a;
-	k[i++]=0x4d; k[i++]=0x5b; k[i++]=0x66; k[i++]=0xa5;
-	k[i++]=0xf6; k[i++]=0x8c; k[i++]=0xc5; k[i++]=0x42;
-	k[i++]=0x4e; k[i++]=0xd5; k[i++]=0x98; k[i++]=0x2d;
-	i=0;
-	r[i++]=0x12; r[i++]=0x97; r[i++]=0x6a; r[i++]=0x08;
-	r[i++]=0xc4; r[i++]=0x42; r[i++]=0x6d; r[i++]=0x0c;
-	r[i++]=0xe8; r[i++]=0xa8; r[i++]=0x24; r[i++]=0x07;
-	r[i++]=0xc4; r[i++]=0xf4; r[i++]=0x82; r[i++]=0x07;
-	i=0;
-	n[i++]=0x9a; n[i++]=0xe8; n[i++]=0x31; n[i++]=0xe7;
-	n[i++]=0x43; n[i++]=0x97; n[i++]=0x8d; n[i++]=0x3a;
-	n[i++]=0x23; n[i++]=0x52; n[i++]=0x7c; n[i++]=0x71;
-	n[i++]=0x28; n[i++]=0x14; n[i++]=0x9e; n[i++]=0x3a;
-	i=0;
-	s[i++]=0x80; s[i++]=0xf8; s[i++]=0xc2; s[i++]=0x0a;
-	s[i++]=0xa7; s[i++]=0x12; s[i++]=0x02; s[i++]=0xd1;
-	s[i++]=0xe2; s[i++]=0x91; s[i++]=0x79; s[i++]=0xcb;
-	s[i++]=0xcb; s[i++]=0x55; s[i++]=0x5a; s[i++]=0x57;
-	i=0;
-	expected[i++]=0x51; expected[i++]=0x54; expected[i++]=0xad; expected[i++]=0x0d;
-	expected[i++]=0x2c; expected[i++]=0xb2; expected[i++]=0x6e; expected[i++]=0x01;
-	expected[i++]=0x27; expected[i++]=0x4f; expected[i++]=0xc5; expected[i++]=0x11;
-	expected[i++]=0x48; expected[i++]=0x49; expected[i++]=0x1f; expected[i++]=0x1b;
-
-    poly.k(k);
-    poly.r(r);
-    poly.stamp(out, n, m, sz);
-
-    ok = true;
-	for(i=0;i<16;i++)
-		if(out[i] != expected[i]) {
-            ok = false;
-            break;
-        }
-
-    ok &= poly.verify(out, n, m, sz);
-    fails += !ok;
-    cout << (ok ? "OK!" : "ERROR!") << endl;
-
-    return fails;
+  cout << "Known vector test has " << fails << " fails." << endl << endl;
+  return fails;
 }
