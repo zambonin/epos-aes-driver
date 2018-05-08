@@ -3,12 +3,9 @@
 #ifndef __cortex_aes_h
 #define __cortex_aes_h
 
-#include <aes.h>
-
 __BEGIN_SYS
 
-template<unsigned int KEY_SIZE>
-class AES: public AES_Common::AES<KEY_SIZE> {};
+class AES_Cortex;
 
 __END_SYS
 
