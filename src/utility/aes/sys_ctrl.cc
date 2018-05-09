@@ -44,13 +44,8 @@
 //
 //*****************************************************************************
 
-#include "utility/aes/hw_ints.h"
 #include "utility/aes/hw_sys_ctrl.h"
-#include "utility/aes/hw_flash_ctrl.h"
-#include "utility/aes/hw_nvic.h"
-#include "utility/aes/cpu.h"
 #include "utility/aes/debug.h"
-#include "utility/aes/interrupt.h"
 #include "utility/aes/sys_ctrl.h"
 
 
@@ -167,6 +162,55 @@ SysCtrlPeripheralValid(unsigned int ui32Peripheral)
            (ui32Peripheral == SYS_CTRL_PERIPH_PKA)   ||
            (ui32Peripheral == SYS_CTRL_PERIPH_AES)   ||
            (ui32Peripheral == SYS_CTRL_PERIPH_RFC));
+}
+#endif
+
+
+//*****************************************************************************
+//
+// Wrapper function for the WFI instruction. Migrated originally from `cpu.c`.
+//
+//*****************************************************************************
+#if defined(__GNUC__)
+void __attribute__((naked))
+CPUwfi(void)
+{
+    //
+    // Wait for the next interrupt.
+    //
+    __asm("    wfi\n"
+          "    bx      lr\n");
+}
+#endif
+#if (__ICCARM__)
+void
+CPUwfi(void)
+{
+    //
+    // Wait for the next interrupt.
+    //
+    __asm("    wfi\n");
+}
+#endif
+#if defined(__KEIL__) || defined(__ARMCC_VERSION)
+__asm void
+CPUwfi(void)
+{
+    //
+    // Wait for the next interrupt.
+    //
+    wfi;
+    bx      lr
+}
+#endif
+#if defined(__TI_COMPILER_VERSION__)
+void
+CPUwfi(void)
+{
+    //
+    // Wait for the next interrupt.
+    //
+    __asm("    wfi\n");
 }
 #endif
 

@@ -42,8 +42,6 @@
 
 #include "hw_types.h"
 #include "hw_aes.h"
-#include "interrupt.h"
-#include "hw_ints.h"
 
 //*****************************************************************************
 //
@@ -74,13 +72,13 @@ extern "C"
 #define SHA256_TEST_ERROR             7
 #define AES_ECB_TEST_ERROR            8
 #define AES_NULL_ERROR                9
-#define SHA256_NULL_ERROR             9    
+#define SHA256_NULL_ERROR             9
 #define AES_CCM_TEST_ERROR            10
 
 // Key store module defines
-#define STATE_BLENGTH   16      // Number of bytes in State 
-#define KEY_BLENGTH     16      // Number of bytes in Key 
-#define KEY_EXP_LENGTH  176     // Nb * (Nr+1) * 4 
+#define STATE_BLENGTH   16      // Number of bytes in State
+#define KEY_BLENGTH     16      // Number of bytes in Key
+#define KEY_EXP_LENGTH  176     // Nb * (Nr+1) * 4
 #define KEY_STORE_SIZE_BITS  0x03UL
 #define KEY_STORE_SIZE_NA    0x00UL
 #define KEY_STORE_SIZE_128   0x01UL
@@ -96,11 +94,11 @@ extern "C"
 #define ECB         0x1FFFFFE0
 #define CCM         0x00040000
 
-// Macro for setting the mode of the AES operation 
+// Macro for setting the mode of the AES operation
 #define AES_SETMODE_ECB do { HWREG(AES_AES_CTRL) &= ~ECB; } while (0)
 #define AES_SETMODE(mode) do { HWREG(AES_AES_CTRL) &= ~mode; HW_REG(AES_AES_CTRL) |= mode} while (0)
 
-// Macro for MIN  
+// Macro for MIN
 #define MIN(n,m)   (((n) < (m)) ? (n) : (m))
 
 //ASM NOP in ccs and IAR
@@ -115,31 +113,31 @@ extern "C"
 //*****************************************************************************
 //
 //For 128 bit key all 8 Key Area locations from 0 to 8 are valid
-//However for 192 bit and 256 bit keys, only even Key Areas 0, 2, 4, 6 
+//However for 192 bit and 256 bit keys, only even Key Areas 0, 2, 4, 6
 //are valid. This is passes as a parameter to AesECBStart()
 //
 //*****************************************************************************
-enum 
+enum
 {
-    KEY_AREA_0,        
-    KEY_AREA_1,          
-    KEY_AREA_2,       
-    KEY_AREA_3,       
+    KEY_AREA_0,
+    KEY_AREA_1,
+    KEY_AREA_2,
+    KEY_AREA_3,
     KEY_AREA_4,
-    KEY_AREA_5,       
-    KEY_AREA_6,  
-    KEY_AREA_7 
+    KEY_AREA_5,
+    KEY_AREA_6,
+    KEY_AREA_7
 };
 
 // Current AES operation
 enum
 {
-    AES_NONE,        
-    AES_KEYL0AD,          
-    AES_ECB,       
-    AES_CCM,       
+    AES_NONE,
+    AES_KEYL0AD,
+    AES_ECB,
+    AES_CCM,
     AES_SHA256,
-    AES_RNG 
+    AES_RNG
 };
 
 // Variable that holds the current AES operation
@@ -152,11 +150,10 @@ extern volatile unsigned char g_ui8CurrentAESOp;
 //*****************************************************************************
 // AES and Keystore functions
 extern unsigned char AESLoadKey(unsigned char *pui8Key, unsigned char ui8KeyLocation);
-extern unsigned char AESECBStart(unsigned char *pui8MsgIn, 
-                           unsigned char *pui8MsgOut, 
+extern unsigned char AESECBStart(unsigned char *pui8MsgIn,
+                           unsigned char *pui8MsgOut,
                            unsigned char ui8KeyLocation,
-                           unsigned char ui8Encrypt, 
-                           unsigned char ui8IntEnable);
+                           unsigned char ui8Encrypt);
 extern unsigned char AESECBCheckResult(void);
 extern unsigned char AESECBGetResult(void);
 

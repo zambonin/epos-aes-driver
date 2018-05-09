@@ -99,7 +99,6 @@ unsigned char AESLoadKey(unsigned char *pui8Key , unsigned char ui8KeyLocation)
     {
         pui8temp[i] = pui8Key[i];
     }
-    IntDisable(INT_AES);
 
     // workaround for AES registers not retained after PM2
     HWREG(AES_CTRL_INT_CFG) |= AES_CTRL_INT_CFG_LEVEL;
@@ -184,8 +183,6 @@ unsigned char AESLoadKey(unsigned char *pui8Key , unsigned char ui8KeyLocation)
 //! \param pui8MsgOut is pointer to output data.
 //! \param ui8KeyLocation is the location in Key RAM.
 //! \param ui8Encrypt is set 'true' to ui8Encrypt or set 'false' to decrypt.
-//! \param ui8IntEnable is set 'true' to enable AES interrupts or 'false' to
-//! disable AES interrupt.
 //!
 //! The \e ui8KeyLocation parameter is an enumerated type which specifies
 //! the Key Ram location in which the key is stored.
@@ -206,18 +203,12 @@ unsigned char AESLoadKey(unsigned char *pui8Key , unsigned char ui8KeyLocation)
 unsigned char AESECBStart(unsigned char *pui8MsgIn,
                     unsigned char *pui8MsgOut,
                     unsigned char ui8KeyLocation,
-                    unsigned char ui8Encrypt,
-                    unsigned char ui8IntEnable)
+                    unsigned char ui8Encrypt)
 {
     // workaround for AES registers not retained after PM2
     g_ui8CurrentAESOp = AES_ECB;
     HWREG(AES_CTRL_INT_CFG) = AES_CTRL_INT_CFG_LEVEL;
     HWREG(AES_CTRL_INT_EN) = AES_CTRL_INT_EN_RESULT_AV;
-    if(ui8IntEnable)
-    {
-        IntPendClear(INT_AES);
-        IntEnable(INT_AES);
-    }
 
     // configure the master control module
     // enable the DMA path to the AES engine
@@ -327,10 +318,6 @@ unsigned char AESECBGetResult(void)
         HWREG(AES_CTRL_INT_CLR) |= AES_CTRL_INT_CLR_KEY_ST_RD_ERR;
         return (AES_KEYSTORE_READ_ERROR);
     }
-
-    // if no errors then AES ECB operation was successful, disable AES
-    // interrupt
-    IntDisable(INT_AES);
 
     //clear DMA done and result available bits
     HWREG(AES_CTRL_INT_CLR) |= (AES_CTRL_INT_CLR_DMA_IN_DONE |
