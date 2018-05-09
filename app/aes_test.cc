@@ -49,15 +49,14 @@ OStream cout;
 
 //
 // NOTES:
-// This example has been run on a SmartRF06 evaluation board.
+// This example has been run on an EPOSMote III evaluation board.
 //
 //*****************************************************************************
 //
 //! \addtogroup aes_examples_list
 //! <h1>AES ECB (aes_example)</h1>
 //!
-//! This example shows how to configure the AES ECB with interrupt handler
-//! and polling.
+//! This example shows how to configure the AES ECB with polling.
 //!
 //! This example uses the following peripherals and I/O signals.  You must
 //! review these and change as needed for your own board:
@@ -66,19 +65,12 @@ OStream cout;
 //! This example uses the following interrupt handlers.  To use this example
 //! in your own application you can add these interrupt handlers to your
 //! vector table.
-//! - AESIntHandler
+//! - NONE
 //!
 //! \note The example registers the handler in dynamic fashion. This consumes
 //!       RAM space as the vector table is allocated and copied to RAM.
 //
 //*****************************************************************************
-
-//*****************************************************************************
-//
-// Variables to syncronize with interrupt handler
-//
-//*****************************************************************************
-unsigned char ui8AESECBIntHandler = 0;
 
 //*****************************************************************************
 //
@@ -91,7 +83,6 @@ typedef struct
     unsigned char ui8AESKeyLocation;        // location in Key RAM
     unsigned char ui8AESBuf[16];            // input buffer
     unsigned char ui8AESExpectedOutput[16]; // expected results
-    unsigned char ui8IntEnable;             // set to true to enable interrupts
 }tAESExample;
 
 //*****************************************************************************
@@ -124,41 +115,6 @@ bool AESMemCmp(const unsigned char *pui8Src1, const unsigned char *pui8Src2,
 
 //*****************************************************************************
 //
-// Interrupt handler for AES
-//
-// param   None
-//
-// return  None
-//
-//*****************************************************************************
-void AESIntHandler(void)
-{
-    switch (g_ui8CurrentAESOp)
-    {
-    case AES_ECB:
-        ui8AESECBIntHandler = 1;
-        //
-        // clear interrupts
-        //
-        HWREG(AES_CTRL_INT_CLR) = 0x00000003;
-        break;
-
-    case AES_NONE:
-        break;
-
-    case AES_CCM:
-        break;
-
-    case AES_SHA256:
-        break;
-
-    case AES_KEYL0AD:
-        break;
-    }
-}
-
-//*****************************************************************************
-//
 // AES ECB example
 //
 // param   pui8Key            Pointer to buffer containing the key
@@ -174,8 +130,6 @@ void AESIntHandler(void)
 //                            KEY_AREA_7
 // param   pui8Buf            pointer to input Buffer
 // param   pui8ExpectedOutput pointer to buffer with expected results
-// param   ui8IntEnable       set to true to enable interrupts and false
-//                            to disable
 //
 // return  AES_SUCCESS if successful
 //
@@ -183,63 +137,32 @@ void AESIntHandler(void)
 unsigned char AesEcbExample(unsigned char *pui8Key,
                       unsigned char ui8KeyLocation,
                       unsigned char *pui8Buf,
-                      unsigned char *pui8ExpectedOutput,
-                      unsigned char ui8IntEnable)
+                      unsigned char *pui8ExpectedOutput)
 {
-    if(ui8IntEnable)
+    //
+    // example using polling
+    //
+    AESLoadKey((unsigned char*)pui8Key, ui8KeyLocation);
+    AESECBStart(pui8Buf, pui8Buf, ui8KeyLocation, true, false);
+
+    //
+    // wait for completion of the operation
+    //
+    do
     {
-        //
-        // example using Interrupt service routine
-        //
-        AESLoadKey((unsigned char*)pui8Key, ui8KeyLocation);
-        AESECBStart(pui8Buf, pui8Buf, ui8KeyLocation, true, true);
+        ASM_NOP;
+    }while(!(AESECBCheckResult()));
 
-        //
-        // wait for completion of the operation
-        //
-        do
-        {
-            ASM_NOP;
-        }while(ui8AESECBIntHandler == 0);
+    AESECBGetResult();
 
-        ui8AESECBIntHandler = 0;
-
-        AESECBGetResult();
-
-        //
-        // Verify AES ECB output
-        //
-        if (AESMemCmp(pui8Buf, pui8ExpectedOutput, 16) == false)
-        {
-            return (AES_ECB_TEST_ERROR);
-        }
-    }
-    else
+    //
+    // Verify AES ECB output
+    //
+    if (AESMemCmp(pui8Buf, pui8ExpectedOutput, 16) == false)
     {
-        //
-        // example using polling
-        //
-        AESLoadKey((unsigned char*)pui8Key, ui8KeyLocation);
-        AESECBStart(pui8Buf, pui8Buf, ui8KeyLocation, true, false);
-
-        //
-        // wait for completion of the operation
-        //
-        do
-        {
-            ASM_NOP;
-        }while(!(AESECBCheckResult()));
-
-        AESECBGetResult();
-
-        //
-        // Verify AES ECB output
-        //
-        if (AESMemCmp(pui8Buf, pui8ExpectedOutput, 16) == false)
-        {
-            return AES_ECB_TEST_ERROR;
-        }
+        return AES_ECB_TEST_ERROR;
     }
+
     return (AES_SUCCESS);
 }
 
@@ -269,17 +192,6 @@ int main(void)
     SysCtrlPeripheralReset(SYS_CTRL_PERIPH_AES);
     SysCtrlPeripheralEnable(SYS_CTRL_PERIPH_AES);
 
-    //
-    // Register interrupt handler
-    //
-    // IntRegister(INT_AES, AESIntHandler);
-
-    //
-    // Enable global interrupts
-    //
-    // IntAltMapEnable();
-    // IntMasterEnable();
-
     tAESExample sAESexample[] =
 {
     {
@@ -290,7 +202,6 @@ int main(void)
         0x5a, 0x5f, 0x57, 0x58, 0x55, 0x53, 0x06, 0x0f },
         { 0x83, 0x78, 0x10, 0x60, 0x0e, 0x13, 0x93, 0x9b,
         0x27, 0xe0, 0xd7, 0xe4, 0x58, 0xf0, 0xa9, 0xd1 },
-        false
     },
     {
         { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -300,7 +211,6 @@ int main(void)
         0x5a, 0x5f, 0x57, 0x58, 0x55, 0x53, 0x06, 0x0f },
         { 0x83, 0x78, 0x10, 0x60, 0x0e, 0x13, 0x93, 0x9b,
         0x27, 0xe0, 0xd7, 0xe4, 0x58, 0xf0, 0xa9, 0xd1 },
-        false
     },
     {
         { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -310,7 +220,6 @@ int main(void)
         0x5a, 0x5f, 0x57, 0x58, 0x55, 0x53, 0x06, 0x0f },
         { 0x83, 0x78, 0x10, 0x60, 0x0e, 0x13, 0x93, 0x9b,
         0x27, 0xe0, 0xd7, 0xe4, 0x58, 0xf0, 0xa9, 0xd1 },
-        false
     },
     {
         { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -320,7 +229,6 @@ int main(void)
         0x5a, 0x5f, 0x57, 0x58, 0x55, 0x53, 0x06, 0x0f },
         { 0x83, 0x78, 0x10, 0x60, 0x0e, 0x13, 0x93, 0x9b,
         0x27, 0xe0, 0xd7, 0xe4, 0x58, 0xf0, 0xa9, 0xd1 },
-        false
     },
     {
         { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -330,7 +238,6 @@ int main(void)
         0x5a, 0x5f, 0x57, 0x58, 0x55, 0x53, 0x06, 0x0f },
         { 0x83, 0x78, 0x10, 0x60, 0x0e, 0x13, 0x93, 0x9b,
         0x27, 0xe0, 0xd7, 0xe4, 0x58, 0xf0, 0xa9, 0xd1 },
-        false
     },
     {
         { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -340,7 +247,6 @@ int main(void)
         0x5a, 0x5f, 0x57, 0x58, 0x55, 0x53, 0x06, 0x0f },
         { 0x83, 0x78, 0x10, 0x60, 0x0e, 0x13, 0x93, 0x9b,
         0x27, 0xe0, 0xd7, 0xe4, 0x58, 0xf0, 0xa9, 0xd1 },
-        false
     },
     {
         { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -350,7 +256,6 @@ int main(void)
         0x5a, 0x5f, 0x57, 0x58, 0x55, 0x53, 0x06, 0x0f },
         { 0x83, 0x78, 0x10, 0x60, 0x0e, 0x13, 0x93, 0x9b,
         0x27, 0xe0, 0xd7, 0xe4, 0x58, 0xf0, 0xa9, 0xd1 },
-        false
     },
     {
         { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -360,21 +265,8 @@ int main(void)
         0x5a, 0x5f, 0x57, 0x58, 0x55, 0x53, 0x06, 0x0f },
         { 0x83, 0x78, 0x10, 0x60, 0x0e, 0x13, 0x93, 0x9b,
         0x27, 0xe0, 0xd7, 0xe4, 0x58, 0xf0, 0xa9, 0xd1 },
-        false
     },
-    {
-        { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-        2,
-        { 0x6c, 0x5f, 0x51, 0x74, 0x53, 0x53, 0x77, 0x5a,
-        0x5a, 0x5f, 0x57, 0x58, 0x55, 0x53, 0x06, 0x0f },
-        { 0x83, 0x78, 0x10, 0x60, 0x0e, 0x13, 0x93, 0x9b,
-        0x27, 0xe0, 0xd7, 0xe4, 0x58, 0xf0, 0xa9, 0xd1 },
-        true
-    }
 };
-
-
 
     for(unsigned char i = 0; i < sizeof(sAESexample)/sizeof(sAESexample[0]); i++)
     {
@@ -384,8 +276,7 @@ int main(void)
         ui8Status = AesEcbExample(sAESexample[i].ui8AESKey,
                                   sAESexample[i].ui8AESKeyLocation,
                                   sAESexample[i].ui8AESBuf,
-                                  sAESexample[i].ui8AESExpectedOutput,
-                                  sAESexample[i].ui8IntEnable);
+                                  sAESexample[i].ui8AESExpectedOutput);
         if(ui8Status != AES_SUCCESS)
         {
           cout << "fail" << endl;
@@ -396,5 +287,5 @@ int main(void)
         }
     }
 
-    return;
+    return 0;
 }
