@@ -855,9 +855,7 @@ public:
     KEY_STORE_SIZE_256 = 0x03UL,
   };
 
-  static const unsigned int stateLength = 16;        // length of state in bytes
   static const unsigned int keyLength = 16;          // length of key in bytes
-  static const unsigned int expandedKeyLength = 176; // Nb * (Nr + 1) * 4
 
   volatile AES_Operation currentOp;
 
@@ -869,6 +867,8 @@ public:
 
   AES_Return_Code aes_load_keys(const unsigned char *key,
                                 unsigned char keyLoc) {
+    OStream cout;
+
     static unsigned int ui32temp[4];
     unsigned char *pui8temp = (unsigned char *)ui32temp;
     unsigned char i;
@@ -880,41 +880,60 @@ public:
     }
 
     // workaround for AES registers not retained after PM2
+    cout << hex << "AES_CTRL_INT_CFG " << aes_reg(AES_CTRL_INT_CFG);
     aes_reg(AES_CTRL_INT_CFG) |= AES_CTRL_INT_CFG_LEVEL;
+    cout << hex << " -> " << aes_reg(AES_CTRL_INT_CFG) << endl;
+    cout << hex << "AES_CTRL_INT_EN " << aes_reg(AES_CTRL_INT_EN);
     aes_reg(AES_CTRL_INT_EN) |=
         (AES_CTRL_INT_EN_DMA_IN_DONE | AES_CTRL_INT_EN_RESULT_AV);
+    cout << hex << " -> " << aes_reg(AES_CTRL_INT_EN) << endl;
 
     // configure master control module
+    cout << hex << "AES_CTRL_INT_SEL " << aes_reg(AES_CTRL_ALG_SEL);
     aes_reg(AES_CTRL_ALG_SEL) &= (~AES_CTRL_ALG_SEL_KEYSTORE);
     aes_reg(AES_CTRL_ALG_SEL) |= AES_CTRL_ALG_SEL_KEYSTORE;
+    cout << hex << " -> " << aes_reg(AES_CTRL_ALG_SEL) << endl;
 
     // clear any outstanding events
+    cout << hex << "AES_CTRL_INT_CLR " << aes_reg(AES_CTRL_INT_CLR);
     aes_reg(AES_CTRL_INT_CLR) |=
         (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
+    cout << hex << " -> " << aes_reg(AES_CTRL_INT_CLR) << endl;
 
     // configure key store module (area, size)
+    cout << hex << "AES_KEY_STORE_SIZE " << aes_reg(AES_KEY_STORE_SIZE);
     aes_reg(AES_KEY_STORE_SIZE) &= KEY_STORE_SIZE_BITS;
 
     // 128-bit key size
     aes_reg(AES_KEY_STORE_SIZE) |= KEY_STORE_SIZE_128;
+    cout << hex << " -> " << aes_reg(AES_KEY_STORE_SIZE) << endl;
 
     // enable keys to write (e.g. Key 0)
+    cout << hex << "AES_KEY_STORE_WRITE_AREA " << aes_reg(AES_KEY_STORE_WRITE_AREA);
     aes_reg(AES_KEY_STORE_WRITE_AREA) = (0x00000001 << keyLoc);
+    cout << hex << " -> " << aes_reg(AES_KEY_STORE_WRITE_AREA) << endl;
 
     // configure DMAC
     // enable DMA channel 0
+    cout << hex << "AES_DMAC_CH0_CTRL " << aes_reg(AES_DMAC_CH0_CTRL);
     aes_reg(AES_DMAC_CH0_CTRL) |= 0x000000001;
+    cout << hex << " -> " << aes_reg(AES_DMAC_CH0_CTRL) << endl;
 
     // base address of the key in ext. memory
+  cout << hex << "AES_DMAC_CH0_EXTADDR " << aes_reg(AES_DMAC_CH0_EXTADDR);
     aes_reg(AES_DMAC_CH0_EXTADDR) = (unsigned int)pui8temp;
+  cout << hex << " -> " << aes_reg(AES_DMAC_CH0_EXTADDR) << endl;
 
     // total key length in bytes (e.g. 16 for 1 x 128-bit key)
+    cout << hex << "AES_DMAC_CH0_DMALENGTH " << aes_reg(AES_DMAC_CH0_DMALENGTH);
     aes_reg(AES_DMAC_CH0_DMALENGTH) = 0x10;
+    cout << hex << " -> " << aes_reg(AES_DMAC_CH0_DMALENGTH) << endl;
 
     // wait for operation completed
     while ((!(aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_RESULT_AV)))
       ;
 
+    cout << hex << "AES_CTRL_INT_STAT " << aes_reg(AES_CTRL_INT_STAT) << endl;
     // check for absence of errors in DMA and key store
     if ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_DMA_BUS_ERR)) {
       aes_reg(AES_CTRL_INT_CLR) |= AES_CTRL_INT_CLR_DMA_BUS_ERR;
@@ -926,12 +945,17 @@ public:
     }
 
     // acknowledge the interrupt
+    cout << hex << "AES_CTRL_INT_CLR " << aes_reg(AES_CTRL_INT_CLR);
     aes_reg(AES_CTRL_INT_CLR) |=
         (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
+    cout << hex << " -> " << aes_reg(AES_CTRL_INT_CLR) << endl;
 
     // disable master control/DMA clock
+    cout << hex << "AES_CTRL_ALG_SEL " << aes_reg(AES_CTRL_ALG_SEL);
     aes_reg(AES_CTRL_ALG_SEL) = 0x00000000;
+    cout << hex << " -> " << aes_reg(AES_CTRL_ALG_SEL) << endl;
 
+    cout << hex << "AES_KEY_STORE_WRITTEN_AREA " << aes_reg(AES_KEY_STORE_WRITTEN_AREA) << endl;
     // check status, if error return error code
     if ((aes_reg(AES_KEY_STORE_WRITTEN_AREA) & 0x7) != 0x1) {
       currentOp = AES_NONE;
@@ -949,60 +973,89 @@ public:
   AES_Return_Code aes_ecb_start(const unsigned char *in, unsigned char *out,
                                 unsigned char keyLoc, bool encrypt) {
     currentOp = AES_ECB;
+    OStream cout;
+    cout << hex << "AES_CTRL_INT_CFG " << aes_reg(AES_CTRL_INT_CFG);
     aes_reg(AES_CTRL_INT_CFG) = AES_CTRL_INT_CFG_LEVEL;
+    cout << hex << " -> " << aes_reg(AES_CTRL_INT_CFG) << endl;
+    cout << hex << "AES_CTRL_INT_EN " << aes_reg(AES_CTRL_INT_EN);
     aes_reg(AES_CTRL_INT_EN) = AES_CTRL_INT_EN_RESULT_AV;
+    cout << hex << " -> " << aes_reg(AES_CTRL_INT_EN) << endl;
 
     // configure the master control module
     // enable the DMA path to the AES engine
+    cout << hex << "AES_CTRL_ALG_SEL " << aes_reg(AES_CTRL_ALG_SEL);
     aes_reg(AES_CTRL_ALG_SEL) = AES_CTRL_ALG_SEL_AES;
+    cout << hex << " -> " << aes_reg(AES_CTRL_ALG_SEL) << endl;
     // clear any outstanding events
+    cout << hex << "AES_CTRL_INT_CLR " << aes_reg(AES_CTRL_INT_CLR);
     aes_reg(AES_CTRL_INT_CLR) |=
         (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
+    cout << hex << " -> " << aes_reg(AES_CTRL_INT_CLR) << endl;
 
+    cout << hex << "AES_KEY_STORE_READ_AREA " << aes_reg(AES_KEY_STORE_READ_AREA);
     aes_reg(AES_KEY_STORE_READ_AREA) = keyLoc;
+    cout << hex << " -> " << aes_reg(AES_KEY_STORE_READ_AREA) << endl;
 
     // wait until key is loaded to the AES module
     while ((aes_reg(AES_KEY_STORE_READ_AREA) & AES_KEY_STORE_READ_AREA_BUSY))
       ;
 
     // check for Key Store read error
+    cout << hex << "AES_CTRL_INT_STAT " << aes_reg(AES_CTRL_INT_STAT);
     if ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_KEY_ST_RD_ERR)) {
       // Clear Key Store Read error
       aes_reg(AES_CTRL_INT_CLR) |= AES_CTRL_INT_CLR_KEY_ST_RD_ERR;
       return (AES_KEYSTORE_READ_ERROR);
     }
+    cout << hex << " -> " << aes_reg(AES_CTRL_INT_STAT) << endl;
 
     // configure AES engine
     // program AES-ECB-128 encryption and no IV
+    cout << hex << "AES_AES_CTRL " << aes_reg(AES_AES_CTRL);
     if (encrypt) {
       aes_reg(AES_AES_CTRL) = 0x0000000C;
     } else {
       aes_reg(AES_AES_CTRL) = 0x00000008;
     }
+    cout << hex << " -> " << aes_reg(AES_AES_CTRL) << endl;
 
     // write length of the message (lo)
+    cout << hex << "AES_AES_C_LENGTH_0 " << aes_reg(AES_AES_C_LENGTH_0);
     aes_reg(AES_AES_C_LENGTH_0) = keyLength;
+    cout << hex << " -> " << aes_reg(AES_AES_C_LENGTH_0) << endl;
     // write length of the message (hi)
     aes_reg(AES_AES_C_LENGTH_1) = 0;
 
     // configure DMAC
     // enable DMA channel 0
+    cout << hex << "AES_DMAC_CH0_CTRL " << aes_reg(AES_DMAC_CH0_CTRL);
     aes_reg(AES_DMAC_CH0_CTRL) = AES_DMAC_CH0_CTRL_EN;
+    cout << hex << " -> " << aes_reg(AES_DMAC_CH0_CTRL) << endl;
 
     // base address of the input data in ext. memory
+    cout << hex << "AES_DMAC_CH0_EXTADDR " << aes_reg(AES_DMAC_CH0_EXTADDR);
     aes_reg(AES_DMAC_CH0_EXTADDR) = (unsigned int)in;
+    cout << hex << " -> " << aes_reg(AES_DMAC_CH0_EXTADDR) << endl;
 
     // input data length in bytes, equal to the message
+    cout << hex << "AES_DMAC_CH0_DMALENGTH " << aes_reg(AES_DMAC_CH0_DMALENGTH);
     aes_reg(AES_DMAC_CH0_DMALENGTH) = keyLength;
+    cout << hex << " -> " << aes_reg(AES_DMAC_CH0_DMALENGTH) << endl;
 
     // length (may be non-block size aligned)
+    cout << hex << "AES_DMAC_CH1_CTRL " << aes_reg(AES_DMAC_CH1_CTRL);
     aes_reg(AES_DMAC_CH1_CTRL) = AES_DMAC_CH1_CTRL_EN; // enable DMA channel 1
+    cout << hex << " -> " << aes_reg(AES_DMAC_CH1_CTRL) << endl;
 
     // base address of the output data buffer
+    cout << hex << "AES_DMAC_CH1_EXTADDR " << aes_reg(AES_DMAC_CH1_EXTADDR);
     aes_reg(AES_DMAC_CH1_EXTADDR) = (unsigned int)out;
+    cout << hex << " -> " << aes_reg(AES_DMAC_CH1_EXTADDR) << endl;
 
     // output data length in bytes, equal to the result
+    cout << hex << "AES_DMAC_CH1_DMALENGTH " << aes_reg(AES_DMAC_CH1_DMALENGTH);
     aes_reg(AES_DMAC_CH1_DMALENGTH) = keyLength;
+    cout << hex << " -> " << aes_reg(AES_DMAC_CH1_DMALENGTH) << endl;
 
     return (AES_SUCCESS);
   }
@@ -1015,6 +1068,7 @@ public:
   }
 
   AES_Return_Code aes_ecb_get_result() {
+    OStream cout;
     // check for errors
     if ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_DMA_BUS_ERR)) {
       // clear the DMA error bit
@@ -1033,12 +1087,18 @@ public:
     }
 
     // clear DMA done and result available bits
+    cout << hex << "AES_CTRL_INT_CLR " << aes_reg(AES_CTRL_INT_CLR);
     aes_reg(AES_CTRL_INT_CLR) |=
         (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
+    cout << hex << " -> " << aes_reg(AES_CTRL_INT_CLR) << endl;
 
     // result has already been copied to the output buffer by DMA
+    cout << hex << "AES_CTRL_ALG_SEL " << aes_reg(AES_CTRL_ALG_SEL);
     aes_reg(AES_CTRL_ALG_SEL) = 0x00000000; // disable master control/DMA clock
+    cout << hex << " -> " << aes_reg(AES_CTRL_ALG_SEL) << endl;
+    cout << hex << "AES_AES_CTRL " << aes_reg(AES_AES_CTRL);
     aes_reg(AES_AES_CTRL) = 0x00000000;     // clear mode
+    cout << hex << " -> " << aes_reg(AES_AES_CTRL) << endl;
     currentOp = AES_NONE;
     return (AES_SUCCESS);
   }
@@ -1046,25 +1106,27 @@ public:
   AES_Return_Code crypt(const unsigned char *key, unsigned char loc,
                         const unsigned char *in, unsigned char *out,
                         bool mode) {
+    OStream cout;
     unsigned char code = AES_SUCCESS;
     code |= aes_load_keys(key, loc);
+    cout << hex << "load keys " << code << endl;
     code |= aes_ecb_start(in, out, loc, mode);
+    cout << hex << "ecb start " << code << endl;
     while (!(aes_ecb_check_result()))
       ;
     code |= aes_ecb_get_result();
-    OStream cout;
-    cout << "here lies my grade " << code << endl;
+    cout << hex << "get result " << code << endl;
     return (AES_Return_Code)code;
   }
 
   void encrypt(const unsigned char *in, const unsigned char *key,
-               unsigned char *out) {
-    crypt(key, 0, in, out, true);
+               unsigned char *out, unsigned char keyLocation = KEY_AREA_0) {
+    crypt(key, keyLocation, in, out, true);
   }
 
   void decrypt(const unsigned char *in, const unsigned char *key,
-               unsigned char *out) {
-    crypt(key, 0, in, out, false);
+               unsigned char *out, unsigned char keyLocation = KEY_AREA_0) {
+    crypt(key, keyLocation, in, out, false);
   }
 };
 
