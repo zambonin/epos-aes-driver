@@ -841,9 +841,7 @@ public:
     KEY_STORE_SIZE_256 = 0x03UL,
   };
 
-  static const unsigned int stateLength = 16;        // length of state in bytes
   static const unsigned int keyLength = 16;          // length of key in bytes
-  static const unsigned int expandedKeyLength = 176; // Nb * (Nr + 1) * 4
 
   volatile AES_Operation currentOp;
 
@@ -855,6 +853,7 @@ public:
 
   AES_Return_Code aes_load_keys(const unsigned char *key,
                                 unsigned char keyLoc) {
+
     static unsigned int ui32temp[4];
     unsigned char *pui8temp = (unsigned char *)ui32temp;
     unsigned char i;
@@ -1042,13 +1041,13 @@ public:
   }
 
   void encrypt(const unsigned char *in, const unsigned char *key,
-               unsigned char *out) {
-    crypt(key, 0, in, out, true);
+               unsigned char *out, unsigned char keyLocation = KEY_AREA_0) {
+    crypt(key, keyLocation, in, out, true);
   }
 
   void decrypt(const unsigned char *in, const unsigned char *key,
-               unsigned char *out) {
-    crypt(key, 0, in, out, false);
+               unsigned char *out, unsigned char keyLocation = KEY_AREA_0) {
+    crypt(key, keyLocation, in, out, false);
   }
 };
 
