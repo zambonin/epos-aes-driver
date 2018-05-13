@@ -25,7 +25,7 @@ __BEGIN_SYS
  * TODO
  * - implement with interruptions
  * - extend key size to 192 and 256 bits
- * - add other modes (CBC-MAC, CBC, CCM, CTR, GCM)
+ * - add other modes (CBC-MAC, CCM, CTR, GCM)
  */
 template <unsigned int KEY_SIZE> class AES : public AES_Common::AES<KEY_SIZE> {
 private:
@@ -119,7 +119,7 @@ private:
   // Bit fields for the AES_DMAC_CH0_CTRL register
   enum {
     AES_DMAC_CH0_CTRL_PRIO = 0x00000002, // Channel priority 0: Low 1: High
-    AES_DMAC_CH0_CTRL_EN = 0x00000001, // Channel enable
+    AES_DMAC_CH0_CTRL_EN = 0x00000001,   // Channel enable
   };
 
   // Bit fields for the AES_DMAC_CH0_DMALENGTH register
@@ -145,7 +145,7 @@ private:
   // Bit fields for the AES_DMAC_CH1_CTRL register
   enum {
     AES_DMAC_CH1_CTRL_PRIO = 0x00000002, // Channel priority 0: Low 1: High
-    AES_DMAC_CH1_CTRL_EN = 0x00000001, // Channel enable
+    AES_DMAC_CH1_CTRL_EN = 0x00000001,   // Channel enable
   };
 
   // Bit fields for the AES_DMAC_CH1_DMALENGTH register
@@ -176,7 +176,7 @@ private:
   // Bit fields for the AES_DMAC_OPTIONS register
   enum {
     AES_DMAC_OPTIONS_NR_OF_CHANNELS =
-        0x00000F00, // Number of channels implemented
+        0x00000F00,                            // Number of channels implemented
     AES_DMAC_OPTIONS_NR_OF_PORTS = 0x00000007, // Number of ports implemented
   };
 
@@ -184,9 +184,9 @@ private:
   enum {
     AES_DMAC_VERSION_HW_MAJOR_VERSION = 0x0F000000, // Major version number mask
     AES_DMAC_VERSION_HW_MINOR_VERSION = 0x00F00000, // Minor version number mask
-    AES_DMAC_VERSION_HW_PATCH_LEVEL = 0x000F0000, // Patch level mask
+    AES_DMAC_VERSION_HW_PATCH_LEVEL = 0x000F0000,   // Patch level mask
     AES_DMAC_VERSION_EIP_NUMBER_COMPL =
-        0x0000FF00, // EIP_NUMBER 1's complement mask
+        0x0000FF00,                           // EIP_NUMBER 1's complement mask
     AES_DMAC_VERSION_EIP_NUMBER = 0x000000FF, // DMAC EIP-number mask
   };
 
@@ -237,7 +237,7 @@ private:
 
   // Bit fields for the AES_KEY_STORE_READ_AREA register
   enum {
-    AES_KEY_STORE_READ_AREA_BUSY = 0x80000000, // Key store operation busy
+    AES_KEY_STORE_READ_AREA_BUSY = 0x80000000,     // Key store operation busy
     AES_KEY_STORE_READ_AREA_RAM_AREA = 0x0000000F, // Key store RAM area select
   };
 
@@ -249,17 +249,17 @@ private:
         0x40000000, // AES auth. TAG and/or IV block(s) available
     AES_AES_CTRL_SAVE_CONTEXT =
         0x20000000, // Auth. TAG or result IV needs to be stored
-    AES_AES_CTRL_CCM_M = 0x01C00000, // CCM auth. field length
-    AES_AES_CTRL_CCM_L = 0x00380000, // CCM length field width
-    AES_AES_CTRL_CCM = 0x00040000, // AES-CCM mode
-    AES_AES_CTRL_GCM = 0x00030000, // AES-GCM mode
-    AES_AES_CTRL_CBC_MAC = 0x00008000, // AES-CBC MAC mode
-    AES_AES_CTRL_CTR_WIDTH = 0x00000180, // CTR counter width mask
-    AES_AES_CTRL_CTR = 0x00000040, // AES-CTR mode
-    AES_AES_CTRL_CBC = 0x00000020, // AES-CBC mode
-    AES_AES_CTRL_KEY_SIZE = 0x00000018, // Key size
-    AES_AES_CTRL_DIRECTION = 0x00000004, // Encrypt
-    AES_AES_CTRL_INPUT_READY = 0x00000002, // AES input buffer empty
+    AES_AES_CTRL_CCM_M = 0x01C00000,        // CCM auth. field length
+    AES_AES_CTRL_CCM_L = 0x00380000,        // CCM length field width
+    AES_AES_CTRL_CCM = 0x00040000,          // AES-CCM mode
+    AES_AES_CTRL_GCM = 0x00030000,          // AES-GCM mode
+    AES_AES_CTRL_CBC_MAC = 0x00008000,      // AES-CBC MAC mode
+    AES_AES_CTRL_CTR_WIDTH = 0x00000180,    // CTR counter width mask
+    AES_AES_CTRL_CTR = 0x00000040,          // AES-CTR mode
+    AES_AES_CTRL_CBC = 0x00000020,          // AES-CBC mode
+    AES_AES_CTRL_KEY_SIZE = 0x00000018,     // Key size
+    AES_AES_CTRL_DIRECTION = 0x00000004,    // Encrypt
+    AES_AES_CTRL_INPUT_READY = 0x00000002,  // AES input buffer empty
     AES_AES_CTRL_OUTPUT_READY = 0x00000001, // AES output block available
   };
 
@@ -282,12 +282,12 @@ private:
   // Bit fields for the AES_HASH_MODE_IN register
   enum {
     AES_HASH_MODE_IN_SHA256_MODE = 0x00000008, // Hash mode
-    AES_HASH_MODE_IN_NEW_HASH = 0x00000001, // New hash session
+    AES_HASH_MODE_IN_NEW_HASH = 0x00000001,    // New hash session
   };
 
   // Bit fields for the AES_CTRL_ALG_SEL register
   enum {
-    AES_CTRL_ALG_SEL_TAG = 0x80000000, // DMA operation includes TAG
+    AES_CTRL_ALG_SEL_TAG = 0x80000000,  // DMA operation includes TAG
     AES_CTRL_ALG_SEL_HASH = 0x00000004, // Select hash engine as DMA destination
     AES_CTRL_ALG_SEL_AES =
         0x00000002, // Select AES engine as DMA source/destination
@@ -334,12 +334,12 @@ private:
   // Bit fields for the AES_CTRL_INT_SET register
   enum {
     AES_CTRL_INT_SET_DMA_IN_DONE = 0x00000002, // Set DMA data in done interrupt
-    AES_CTRL_INT_SET_RESULT_AV = 0x00000001, // Set result available interrupt
+    AES_CTRL_INT_SET_RESULT_AV = 0x00000001,   // Set result available interrupt
   };
 
   // Bit fields for the AES_CTRL_INT_STAT register
   enum {
-    AES_CTRL_INT_STAT_DMA_BUS_ERR = 0x80000000, // DMA bus error detected
+    AES_CTRL_INT_STAT_DMA_BUS_ERR = 0x80000000,   // DMA bus error detected
     AES_CTRL_INT_STAT_KEY_ST_WR_ERR = 0x40000000, // Write error detected
     AES_CTRL_INT_STAT_KEY_ST_RD_ERR = 0x20000000, // Read error detected
     AES_CTRL_INT_STAT_DMA_IN_DONE =
@@ -350,17 +350,17 @@ private:
 
   // Bit fields for the AES_CTRL_OPTIONS register
   enum {
-    AES_CTRL_OPTIONS_TYPE = 0xFF000000, // Device type mask
+    AES_CTRL_OPTIONS_TYPE = 0xFF000000,         // Device type mask
     AES_CTRL_OPTIONS_AHBINTERFACE = 0x00010000, // AHB interface available
     AES_CTRL_OPTIONS_SHA_256 = 0x00000100, // The HASH core supports SHA-256
     AES_CTRL_OPTIONS_AES_CCM =
         0x00000080, // AES-CCM available as single operation
     AES_CTRL_OPTIONS_AES_GCM =
         0x00000040, // AES-GCM available as single operation
-    AES_CTRL_OPTIONS_AES_256 = 0x00000020, // AES core supports 256-bit keys
-    AES_CTRL_OPTIONS_AES_128 = 0x00000010, // AES core supports 128-bit keys
-    AES_CTRL_OPTIONS_HASH = 0x00000004, // HASH Core available
-    AES_CTRL_OPTIONS_AES = 0x00000002, // AES core available
+    AES_CTRL_OPTIONS_AES_256 = 0x00000020,  // AES core supports 256-bit keys
+    AES_CTRL_OPTIONS_AES_128 = 0x00000010,  // AES core supports 128-bit keys
+    AES_CTRL_OPTIONS_HASH = 0x00000004,     // HASH Core available
+    AES_CTRL_OPTIONS_AES = 0x00000002,      // AES core available
     AES_CTRL_OPTIONS_KEYSTORE = 0x00000001, // Key store available
   };
 
@@ -368,9 +368,9 @@ private:
   enum {
     AES_CTRL_VERSION_MAJOR_VERSION = 0x0F000000, // Major version number mask
     AES_CTRL_VERSION_MINOR_VERSION = 0x00F00000, // Minor version number mask
-    AES_CTRL_VERSION_PATCH_LEVEL = 0x000F0000, // Patch level mask
+    AES_CTRL_VERSION_PATCH_LEVEL = 0x000F0000,   // Patch level mask
     AES_CTRL_VERSION_EIP_NUMBER_COMPL =
-        0x0000FF00, // EIP_NUMBER 1's complement mask
+        0x0000FF00,                           // EIP_NUMBER 1's complement mask
     AES_CTRL_VERSION_EIP_NUMBER = 0x000000FF, // EIP-120t EIP-number mask
   };
 
@@ -457,15 +457,16 @@ public:
   // ECB is automatically selected if AES_AES_CTRL[28:5] are all zeroes
   // one needs only to enable the direction bit (AES_AES_CTRL[2])
   void encrypt(const unsigned char *in, const unsigned char *key,
-               unsigned char *out, unsigned char key_location = KEY_AREA_0,
-               const unsigned char *iv = 0,
-               unsigned char mode = AES_AES_CTRL_DIRECTION) {
+               unsigned char *out, const unsigned char *iv = 0,
+               unsigned char mode = AES_AES_CTRL_DIRECTION,
+               unsigned char key_location = KEY_AREA_0) {
     crypt(key, key_location, in, out, iv, mode);
   }
 
   void decrypt(const unsigned char *in, const unsigned char *key,
-               unsigned char *out, unsigned char key_location = KEY_AREA_0,
-               const unsigned char *iv = 0, unsigned char mode = 0) {
+               unsigned char *out, const unsigned char *iv = 0,
+               unsigned char mode = 0,
+               unsigned char key_location = KEY_AREA_0) {
     crypt(key, key_location, in, out, iv, mode);
   }
 };
