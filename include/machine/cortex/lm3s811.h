@@ -469,6 +469,9 @@ protected:
 // IEEE 802.15.4 (not present in this model)
     static void power_ieee802_15_4(const Power_Mode & mode) {}
 
+// AES (not present in this model)
+    static void power_aes(const Power_Mode & mode) {}
+
 public:
     static volatile Reg32 & scr(unsigned int o) { return reinterpret_cast<volatile Reg32 *>(SCR_BASE)[o / sizeof(Reg32)]; }
     static volatile Reg32 & scs(unsigned int o) { return reinterpret_cast<volatile Reg32 *>(SCS_BASE)[o / sizeof(Reg32)]; }

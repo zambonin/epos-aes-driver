@@ -37,6 +37,9 @@ void Machine::init()
     if(Traits<NIC>::enabled)
         NIC::init();
 #endif
+#ifdef __AES_H
+    Machine_Model::power_aes(FULL);
+#endif
 }
 
 __END_SYS

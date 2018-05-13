@@ -413,6 +413,10 @@ public:
     enum RCGCRFC {
         RCGCRFC_RFC0  = 1 << 0,
     };
+    enum {
+      RCGCSEC_AES = 1 << 1,
+      RCGCSEC_PKA = 1 << 0,
+    };
     enum I_MAP {
         I_MAP_ALTMAP = 1 << 0,
     };
@@ -923,7 +927,7 @@ public:
                                 // conversion is completed before the previous data has been read,
                                 // the EOC bit remains high.
                                 // 0: Conversion not complete
-                                // 1: Conversion completed 
+                                // 1: Conversion completed
         ADCCON1_ST    = 1 << 6, // Start conversion
                                 // Read as 1 until conversion completes
                                 // 0: No conversion in progress.
@@ -1171,6 +1175,23 @@ protected:
         }
     }
 
+// AES
+    static void power_aes(const Power_Mode &mode) {
+      switch(mode) {
+        case FULL:
+          scr(RCGCSEC) |= RCGCSEC_AES;
+        case LIGHT:
+          scr(SCGCSEC) |= RCGCSEC_AES;
+        case SLEEP:
+          scr(DCGCSEC) |= RCGCSEC_AES;
+          break;
+        case OFF:
+          scr(RCGCSEC) &= ~RCGCSEC_AES;
+          scr(SCGCSEC) &= ~RCGCSEC_AES;
+          scr(DCGCSEC) &= ~RCGCSEC_AES;
+          break;
+      }
+    }
 
 // PWM
     static void enable_pwm(unsigned int timer, unsigned int gpio_port, unsigned int gpio_pin) {
