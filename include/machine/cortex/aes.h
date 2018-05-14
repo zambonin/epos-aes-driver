@@ -11,7 +11,7 @@ __BEGIN_SYS
  * TODO
  * - implement with interruptions
  * - extend key size to 192 and 256 bits
- * - add other modes (CBC-MAC, CBC, CCM, CTR, GCM)
+ * - add other modes (CBC-MAC, CCM, CTR, GCM)
  */
 class AES_Cortex {
 private:
@@ -104,630 +104,260 @@ private:
 
   // Bit fields for the AES_DMAC_CH0_CTRL register
   enum {
-    AES_DMAC_CH0_CTRL_PRIO = 0x00000002,
-    AES_DMAC_CH0_CTRL_PRIO_S = 1,
-    AES_DMAC_CH0_CTRL_EN = 0x00000001,
-    AES_DMAC_CH0_CTRL_EN_S = 0,
-  };
-
-  // Bit fields for the AES_DMAC_CH0_EXTADDR register
-  enum {
-    AES_DMAC_CH0_EXTADDR_ADDR = 0xFFFFFFFF,
-    AES_DMAC_CH0_EXTADDR_ADDR_S = 0,
+    AES_DMAC_CH0_CTRL_PRIO = 0x00000002, // Channel priority 0: Low 1: High
+    AES_DMAC_CH0_CTRL_EN = 0x00000001,   // Channel enable
   };
 
   // Bit fields for the AES_DMAC_CH0_DMALENGTH register
   enum {
-    AES_DMAC_CH0_DMALENGTH_DMALEN = 0x0000FFFF,
-    AES_DMAC_CH0_DMALENGTH_DMALEN_S = 0,
+    AES_DMAC_CH0_DMALENGTH_DMALEN =
+        0x0000FFFF, // Channel DMA length in bytes mask
   };
 
   // Bit fields for the AES_DMAC_STATUS register
   enum {
-    AES_DMAC_STATUS_PORT_ERR = 0x00020000,
-    AES_DMAC_STATUS_PORT_ERR_S = 17,
-    AES_DMAC_STATUS_CH1_ACT = 0x00000002,
-    AES_DMAC_STATUS_CH1_ACT_S = 1,
-    AES_DMAC_STATUS_CH0_ACT = 0x00000001,
-    AES_DMAC_STATUS_CH0_ACT_S = 0,
+    AES_DMAC_STATUS_PORT_ERR = 0x00020000, // AHB port transfer errors
+    AES_DMAC_STATUS_CH1_ACT =
+        0x00000002, // Channel 1 active (DMA transfer on-going)
+    AES_DMAC_STATUS_CH0_ACT =
+        0x00000001, // Channel 0 active (DMA transfer on-going)
   };
 
   // Bit fields for the AES_DMAC_SWRES register
   enum {
-    AES_DMAC_SWRES_SWRES = 0x00000001,
-    AES_DMAC_SWRES_SWRES_S = 0,
+    AES_DMAC_SWRES_SWRES = 0x00000001, // Software reset enable
   };
 
   // Bit fields for the AES_DMAC_CH1_CTRL register
   enum {
-    AES_DMAC_CH1_CTRL_PRIO = 0x00000002,
-    AES_DMAC_CH1_CTRL_PRIO_S = 1,
-    AES_DMAC_CH1_CTRL_EN = 0x00000001,
-    AES_DMAC_CH1_CTRL_EN_S = 0,
-  };
-
-  // Bit fields for the AES_DMAC_CH1_EXTADDR register
-  enum {
-    AES_DMAC_CH1_EXTADDR_ADDR = 0xFFFFFFFF,
-    AES_DMAC_CH1_EXTADDR_ADDR_S = 0,
+    AES_DMAC_CH1_CTRL_PRIO = 0x00000002, // Channel priority 0: Low 1: High
+    AES_DMAC_CH1_CTRL_EN = 0x00000001,   // Channel enable
   };
 
   // Bit fields for the AES_DMAC_CH1_DMALENGTH register
   enum {
-    AES_DMAC_CH1_DMALENGTH_DMALEN = 0x0000FFFF,
-    AES_DMAC_CH1_DMALENGTH_DMALEN_S = 0,
+    AES_DMAC_CH1_DMALENGTH_DMALEN =
+        0x0000FFFF, // Channel DMA length in bytes mask
   };
 
   // Bit fields for the AES_DMAC_MST_RUNPARAMS register
   enum {
-    AES_DMAC_MST_RUNPARAMS_AHB_MST1_BURST_SIZE = 0x0000F000,
-    AES_DMAC_MST_RUNPARAMS_AHB_MST1_BURST_SIZE_S = 12,
-    AES_DMAC_MST_RUNPARAMS_AHB_MST1_IDLE_EN = 0x00000800,
-    AES_DMAC_MST_RUNPARAMS_AHB_MST1_IDLE_EN_S = 11,
-    AES_DMAC_MST_RUNPARAMS_AHB_MST1_INCR_EN = 0x00000400,
-    AES_DMAC_MST_RUNPARAMS_AHB_MST1_INCR_EN_S = 10,
-    AES_DMAC_MST_RUNPARAMS_AHB_MST1_LOCK_EN = 0x00000200,
-    AES_DMAC_MST_RUNPARAMS_AHB_MST1_LOCK_EN_S = 9,
-    AES_DMAC_MST_RUNPARAMS_AHB_MST1_BIGEND = 0x00000100,
-    AES_DMAC_MST_RUNPARAMS_AHB_MST1_BIGEND_S = 8,
+    AES_DMAC_MST_RUNPARAMS_AHB_MST1_BURST_SIZE =
+        0x0000F000, // Maximum burst size mask
+    AES_DMAC_MST_RUNPARAMS_AHB_MST1_IDLE_EN =
+        0x00000800, // Idle insertion between bursts
+    AES_DMAC_MST_RUNPARAMS_AHB_MST1_INCR_EN =
+        0x00000400, // Fixed-length burst or single transfers
+    AES_DMAC_MST_RUNPARAMS_AHB_MST1_LOCK_EN = 0x00000200, // Locked transfers
+    AES_DMAC_MST_RUNPARAMS_AHB_MST1_BIGEND =
+        0x00000100, // Big endian AHB master
   };
 
   // Bit fields for the AES_DMAC_PERSR register
   enum {
-    AES_DMAC_PERSR_PORT1_AHB_ERROR = 0x00001000,
-    AES_DMAC_PERSR_PORT1_AHB_ERROR_S = 12,
-    AES_DMAC_PERSR_PORT1_CHANNEL = 0x00000200,
-    AES_DMAC_PERSR_PORT1_CHANNEL_S = 9,
+    AES_DMAC_PERSR_PORT1_AHB_ERROR = 0x00001000, // AHB bus error
+    AES_DMAC_PERSR_PORT1_CHANNEL = 0x00000200, // Last serviced channel (0 or 1)
   };
 
   // Bit fields for the AES_DMAC_OPTIONS register
   enum {
-    AES_DMAC_OPTIONS_NR_OF_CHANNELS = 0x00000F00,
-    AES_DMAC_OPTIONS_NR_OF_CHANNELS_S = 8,
-    AES_DMAC_OPTIONS_NR_OF_PORTS = 0x00000007,
-    AES_DMAC_OPTIONS_NR_OF_PORTS_S = 0,
+    AES_DMAC_OPTIONS_NR_OF_CHANNELS =
+        0x00000F00,                            // Number of channels implemented
+    AES_DMAC_OPTIONS_NR_OF_PORTS = 0x00000007, // Number of ports implemented
   };
 
   // Bit fields for the AES_DMAC_VERSION register
   enum {
-    AES_DMAC_VERSION_HW_MAJOR_VERSION = 0x0F000000,
-    AES_DMAC_VERSION_HW_MAJOR_VERSION_S = 24,
-    AES_DMAC_VERSION_HW_MINOR_VERSION = 0x00F00000,
-    AES_DMAC_VERSION_HW_MINOR_VERSION_S = 20,
-    AES_DMAC_VERSION_HW_PATCH_LEVEL = 0x000F0000,
-    AES_DMAC_VERSION_HW_PATCH_LEVEL_S = 16,
-    AES_DMAC_VERSION_EIP_NUMBER_COMPL = 0x0000FF00,
-    AES_DMAC_VERSION_EIP_NUMBER_COMPL_S = 8,
-    AES_DMAC_VERSION_EIP_NUMBER = 0x000000FF,
-    AES_DMAC_VERSION_EIP_NUMBER_S = 0,
+    AES_DMAC_VERSION_HW_MAJOR_VERSION = 0x0F000000, // Major version number mask
+    AES_DMAC_VERSION_HW_MINOR_VERSION = 0x00F00000, // Minor version number mask
+    AES_DMAC_VERSION_HW_PATCH_LEVEL = 0x000F0000,   // Patch level mask
+    AES_DMAC_VERSION_EIP_NUMBER_COMPL =
+        0x0000FF00,                           // EIP_NUMBER 1's complement mask
+    AES_DMAC_VERSION_EIP_NUMBER = 0x000000FF, // DMAC EIP-number mask
   };
 
   // Bit fields for the AES_KEY_STORE_WRITE_AREA register
   enum {
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA7 = 0x00000080,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA7_S = 7,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA6 = 0x00000040,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA6_S = 6,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA5 = 0x00000020,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA5_S = 5,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA4 = 0x00000010,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA4_S = 4,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA3 = 0x00000008,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA3_S = 3,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA2 = 0x00000004,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA2_S = 2,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA1 = 0x00000002,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA1_S = 1,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA0 = 0x00000001,
-    AES_KEY_STORE_WRITE_AREA_RAM_AREA0_S = 0,
+    AES_KEY_STORE_WRITE_AREA_RAM_AREA7 =
+        0x00000080, // Select RAM area 7 to be written
+    AES_KEY_STORE_WRITE_AREA_RAM_AREA6 =
+        0x00000040, // Select RAM area 6 to be written
+    AES_KEY_STORE_WRITE_AREA_RAM_AREA5 =
+        0x00000020, // Select RAM area 5 to be written
+    AES_KEY_STORE_WRITE_AREA_RAM_AREA4 =
+        0x00000010, // Select RAM area 4 to be written
+    AES_KEY_STORE_WRITE_AREA_RAM_AREA3 =
+        0x00000008, // Select RAM area 3 to be written
+    AES_KEY_STORE_WRITE_AREA_RAM_AREA2 =
+        0x00000004, // Select RAM area 2 to be written
+    AES_KEY_STORE_WRITE_AREA_RAM_AREA1 =
+        0x00000002, // Select RAM area 1 to be written
+    AES_KEY_STORE_WRITE_AREA_RAM_AREA0 =
+        0x00000001, // Select RAM area 0 to be written
   };
 
   // Bit fields for the AES_KEY_STORE_WRITTEN_AREA register
   enum {
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN7 = 0x00000080,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN7_S = 7,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN6 = 0x00000040,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN6_S = 6,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN5 = 0x00000020,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN5_S = 5,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN4 = 0x00000010,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN4_S = 4,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN3 = 0x00000008,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN3_S = 3,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN2 = 0x00000004,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN2_S = 2,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN1 = 0x00000002,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN1_S = 1,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN0 = 0x00000001,
-    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN0_S = 0,
+    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN7 =
+        0x00000080, // Reset or check validity of RAM area 7
+    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN6 =
+        0x00000040, // Reset or check validity of RAM area 6
+    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN5 =
+        0x00000020, // Reset or check validity of RAM area 5
+    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN4 =
+        0x00000010, // Reset or check validity of RAM area 4
+    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN3 =
+        0x00000008, // Reset or check validity of RAM area 3
+    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN2 =
+        0x00000004, // Reset or check validity of RAM area 2
+    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN1 =
+        0x00000002, // Reset or check validity of RAM area 1
+    AES_KEY_STORE_WRITTEN_AREA_RAM_AREA_WRITTEN0 =
+        0x00000001, // Reset or check validity of RAM area 0
   };
 
   // Bit fields for the AES_KEY_STORE_SIZE register
   enum {
-    AES_KEY_STORE_SIZE_KEY_SIZE = 0x00000003,
-    AES_KEY_STORE_SIZE_KEY_SIZE_S = 0,
+    AES_KEY_STORE_SIZE_KEY_SIZE = 0x00000003, // Define key size
   };
 
   // Bit fields for the AES_KEY_STORE_READ_AREA register
   enum {
-    AES_KEY_STORE_READ_AREA_BUSY = 0x80000000,
-    AES_KEY_STORE_READ_AREA_BUSY_S = 31,
-    AES_KEY_STORE_READ_AREA_RAM_AREA = 0x0000000F,
-    AES_KEY_STORE_READ_AREA_RAM_AREA_S = 0,
-  };
-
-  // Bit fields for the AES_AES_KEY2_0 register
-  enum {
-    AES_AES_KEY2_0_AES_KEY2 = 0xFFFFFFFF,
-    AES_AES_KEY2_0_AES_KEY2_S = 0,
-  };
-
-  // Bit fields for the AES_AES_KEY2_1 register
-  enum {
-    AES_AES_KEY2_1_AES_KEY2 = 0xFFFFFFFF,
-    AES_AES_KEY2_1_AES_KEY2_S = 0,
-  };
-
-  // Bit fields for the AES_AES_KEY2_2 register
-  enum {
-    AES_AES_KEY2_2_AES_KEY2 = 0xFFFFFFFF,
-    AES_AES_KEY2_2_AES_KEY2_S = 0,
-  };
-
-  // Bit fields for the AES_AES_KEY2_3 register
-  enum {
-    AES_AES_KEY2_3_AES_KEY2 = 0xFFFFFFFF,
-    AES_AES_KEY2_3_AES_KEY2_S = 0,
-  };
-
-  // Bit fields for the AES_AES_KEY3_0 register
-  enum {
-    AES_AES_KEY3_0_AES_KEY2 = 0xFFFFFFFF,
-    AES_AES_KEY3_0_AES_KEY2_S = 0,
-  };
-
-  // Bit fields for the AES_AES_KEY3_1 register
-  enum {
-    AES_AES_KEY3_1_AES_KEY2 = 0xFFFFFFFF,
-    AES_AES_KEY3_1_AES_KEY2_S = 0,
-  };
-
-  // Bit fields for the AES_AES_KEY3_2 register
-  enum {
-    AES_AES_KEY3_2_AES_KEY2 = 0xFFFFFFFF,
-    AES_AES_KEY3_2_AES_KEY2_S = 0,
-  };
-
-  // Bit fields for the AES_AES_KEY3_3 register
-  enum {
-    AES_AES_KEY3_3_AES_KEY2 = 0xFFFFFFFF,
-    AES_AES_KEY3_3_AES_KEY2_S = 0,
-  };
-
-  // Bit fields for the AES_AES_IV_0 register
-  enum {
-    AES_AES_IV_0_AES_IV = 0xFFFFFFFF,
-    AES_AES_IV_0_AES_IV_S = 0,
-  };
-
-  // Bit fields for the AES_AES_IV_1 register
-  enum {
-    AES_AES_IV_1_AES_IV = 0xFFFFFFFF,
-    AES_AES_IV_1_AES_IV_S = 0,
-  };
-
-  // Bit fields for the AES_AES_IV_2 register
-  enum {
-    AES_AES_IV_2_AES_IV = 0xFFFFFFFF,
-    AES_AES_IV_2_AES_IV_S = 0,
-  };
-
-  // Bit fields for the AES_AES_IV_3 register
-  enum {
-    AES_AES_IV_3_AES_IV = 0xFFFFFFFF,
-    AES_AES_IV_3_AES_IV_S = 0,
+    AES_KEY_STORE_READ_AREA_BUSY = 0x80000000,     // Key store operation busy
+    AES_KEY_STORE_READ_AREA_RAM_AREA = 0x0000000F, // Key store RAM area select
   };
 
   // Bit fields for the AES_AES_CTRL register
   enum {
-    AES_AES_CTRL_CONTEXT_READY = 0x80000000,
-    AES_AES_CTRL_CONTEXT_READY_S = 31,
-    AES_AES_CTRL_SAVED_CONTEXT_READY = 0x40000000,
-    AES_AES_CTRL_SAVED_CONTEXT_READY_S = 30,
-    AES_AES_CTRL_SAVE_CONTEXT = 0x20000000,
-    AES_AES_CTRL_SAVE_CONTEXT_S = 29,
-    AES_AES_CTRL_CCM_M = 0x01C00000,
-    AES_AES_CTRL_CCM_M_S = 22,
-    AES_AES_CTRL_CCM_L = 0x00380000,
-    AES_AES_CTRL_CCM_L_S = 19,
-    AES_AES_CTRL_CCM = 0x00040000,
-    AES_AES_CTRL_CCM_S = 18,
-    AES_AES_CTRL_GCM = 0x00030000,
-    AES_AES_CTRL_GCM_S = 16,
-    AES_AES_CTRL_CBC_MAC = 0x00008000,
-    AES_AES_CTRL_CBC_MAC_S = 15,
-    AES_AES_CTRL_CTR_WIDTH = 0x00000180,
-    AES_AES_CTRL_CTR_WIDTH_S = 7,
-    AES_AES_CTRL_CTR = 0x00000040,
-    AES_AES_CTRL_CTR_S = 6,
-    AES_AES_CTRL_CBC = 0x00000020,
-    AES_AES_CTRL_CBC_S = 5,
-    AES_AES_CTRL_KEY_SIZE = 0x00000018,
-    AES_AES_CTRL_KEY_SIZE_S = 3,
-    AES_AES_CTRL_DIRECTION = 0x00000004,
-    AES_AES_CTRL_DIRECTION_S = 2,
-    AES_AES_CTRL_INPUT_READY = 0x00000002,
-    AES_AES_CTRL_INPUT_READY_S = 1,
-    AES_AES_CTRL_OUTPUT_READY = 0x00000001,
-    AES_AES_CTRL_OUTPUT_READY_S = 0,
-  };
-
-  // Bit fields for the AES_AES_C_LENGTH_0 register
-  enum {
-    AES_AES_C_LENGTH_0_C_LENGTH = 0xFFFFFFFF,
-    AES_AES_C_LENGTH_0_C_LENGTH_S = 0,
-  };
-
-  // Bit fields for the AES_AES_C_LENGTH_1 register
-  enum {
-    AES_AES_C_LENGTH_1_C_LENGTH = 0xFFFFFFFF,
-    AES_AES_C_LENGTH_1_C_LENGTH_S = 0,
-  };
-
-  // Bit fields for the AES_AES_AUTH_LENGTH register
-  enum {
-    AES_AES_AUTH_LENGTH_AUTH_LENGTH = 0xFFFFFFFF,
-    AES_AES_AUTH_LENGTH_AUTH_LENGTH_S = 0,
-  };
-
-  // Bit fields for the AES_AES_DATA_IN_OUT_0 register
-  enum {
-    AES_AES_DATA_IN_OUT_0_AES_DATA_IN_OUT = 0xFFFFFFFF,
-    AES_AES_DATA_IN_OUT_0_AES_DATA_IN_OUT_S = 0,
-  };
-
-  // Bit fields for the AES_AES_DATA_IN_OUT_1 register
-  enum {
-    AES_AES_DATA_IN_OUT_1_AES_DATA_IN_OUT = 0xFFFFFFFF,
-    AES_AES_DATA_IN_OUT_1_AES_DATA_IN_OUT_S = 0,
-  };
-
-  // Bit fields for the AES_AES_DATA_IN_OUT_2 register
-  enum {
-    AES_AES_DATA_IN_OUT_2_AES_DATA_IN_OUT = 0xFFFFFFFF,
-    AES_AES_DATA_IN_OUT_2_AES_DATA_IN_OUT_S = 0,
-  };
-
-  // Bit fields for the AES_AES_DATA_IN_OUT_3 register
-  enum {
-    AES_AES_DATA_IN_OUT_3_AES_DATA_IN_OUT = 0xFFFFFFFF,
-    AES_AES_DATA_IN_OUT_3_AES_DATA_IN_OUT_S = 0,
-  };
-
-  // Bit fields for the AES_AES_TAG_OUT_0 register
-  enum {
-    AES_AES_TAG_OUT_0_AES_TAG = 0xFFFFFFFF,
-    AES_AES_TAG_OUT_0_AES_TAG_S = 0,
-  };
-
-  // Bit fields for the AES_AES_TAG_OUT_1 register
-  enum {
-    AES_AES_TAG_OUT_1_AES_TAG = 0xFFFFFFFF,
-    AES_AES_TAG_OUT_1_AES_TAG_S = 0,
-  };
-
-  // Bit fields for the AES_AES_TAG_OUT_2 register
-  enum {
-    AES_AES_TAG_OUT_2_AES_TAG = 0xFFFFFFFF,
-    AES_AES_TAG_OUT_2_AES_TAG_S = 0,
-  };
-
-  // Bit fields for the AES_AES_TAG_OUT_3 register
-  enum {
-    AES_AES_TAG_OUT_3_AES_TAG = 0xFFFFFFFF,
-    AES_AES_TAG_OUT_3_AES_TAG_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_0 register
-  enum {
-    AES_HASH_DATA_IN_0_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_0_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_1 register
-  enum {
-    AES_HASH_DATA_IN_1_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_1_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_2 register
-  enum {
-    AES_HASH_DATA_IN_2_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_2_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_3 register
-  enum {
-    AES_HASH_DATA_IN_3_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_3_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_4 register
-  enum {
-    AES_HASH_DATA_IN_4_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_4_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_5 register
-  enum {
-    AES_HASH_DATA_IN_5_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_5_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_6 register
-  enum {
-    AES_HASH_DATA_IN_6_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_6_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_7 register
-  enum {
-    AES_HASH_DATA_IN_7_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_7_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_8 register
-  enum {
-    AES_HASH_DATA_IN_8_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_8_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_9 register
-  enum {
-    AES_HASH_DATA_IN_9_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_9_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_10 register
-  enum {
-    AES_HASH_DATA_IN_10_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_10_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_11 register
-  enum {
-    AES_HASH_DATA_IN_11_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_11_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_12 register
-  enum {
-    AES_HASH_DATA_IN_12_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_12_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_13 register
-  enum {
-    AES_HASH_DATA_IN_13_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_13_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_14 register
-  enum {
-    AES_HASH_DATA_IN_14_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_14_HASH_DATA_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DATA_IN_15 register
-  enum {
-    AES_HASH_DATA_IN_15_HASH_DATA_IN = 0xFFFFFFFF,
-    AES_HASH_DATA_IN_15_HASH_DATA_IN_S = 0,
+    AES_AES_CTRL_CONTEXT_READY =
+        0x80000000, // Context data registers can be overwritten
+    AES_AES_CTRL_SAVED_CONTEXT_READY =
+        0x40000000, // AES auth. TAG and/or IV block(s) available
+    AES_AES_CTRL_SAVE_CONTEXT =
+        0x20000000, // Auth. TAG or result IV needs to be stored
+    AES_AES_CTRL_CCM_M = 0x01C00000,        // CCM auth. field length
+    AES_AES_CTRL_CCM_L = 0x00380000,        // CCM length field width
+    AES_AES_CTRL_CCM = 0x00040000,          // AES-CCM mode
+    AES_AES_CTRL_GCM = 0x00030000,          // AES-GCM mode
+    AES_AES_CTRL_CBC_MAC = 0x00008000,      // AES-CBC MAC mode
+    AES_AES_CTRL_CTR_WIDTH = 0x00000180,    // CTR counter width mask
+    AES_AES_CTRL_CTR = 0x00000040,          // AES-CTR mode
+    AES_AES_CTRL_CBC = 0x00000020,          // AES-CBC mode
+    AES_AES_CTRL_KEY_SIZE = 0x00000018,     // Key size
+    AES_AES_CTRL_DIRECTION = 0x00000004,    // Encrypt
+    AES_AES_CTRL_INPUT_READY = 0x00000002,  // AES input buffer empty
+    AES_AES_CTRL_OUTPUT_READY = 0x00000001, // AES output block available
   };
 
   // Bit fields for the AES_HASH_IO_BUF_CTRL register
   enum {
-    AES_HASH_IO_BUF_CTRL_PAD_DMA_MESSAGE = 0x00000080,
-    AES_HASH_IO_BUF_CTRL_PAD_DMA_MESSAGE_S = 7,
-    AES_HASH_IO_BUF_CTRL_GET_DIGEST = 0x00000040,
-    AES_HASH_IO_BUF_CTRL_GET_DIGEST_S = 6,
-    AES_HASH_IO_BUF_CTRL_PAD_MESSAGE = 0x00000020,
-    AES_HASH_IO_BUF_CTRL_PAD_MESSAGE_S = 5,
-    AES_HASH_IO_BUF_CTRL_RFD_IN = 0x00000004,
-    AES_HASH_IO_BUF_CTRL_RFD_IN_S = 2,
-    AES_HASH_IO_BUF_CTRL_DATA_IN_AV = 0x00000002,
-    AES_HASH_IO_BUF_CTRL_DATA_IN_AV_S = 1,
-    AES_HASH_IO_BUF_CTRL_OUTPUT_FULL = 0x00000001,
-    AES_HASH_IO_BUF_CTRL_OUTPUT_FULL_S = 0,
+    AES_HASH_IO_BUF_CTRL_PAD_DMA_MESSAGE =
+        0x0000007f, // Hash engine message padding required
+    AES_HASH_IO_BUF_CTRL_GET_DIGEST =
+        0x00000040, // Hash engine digest requested
+    AES_HASH_IO_BUF_CTRL_PAD_MESSAGE =
+        0x00000020, // Last message data in HASH_DATA_IN, apply hash padding
+    AES_HASH_IO_BUF_CTRL_RFD_IN =
+        0x00000004, // Hash engine input buffer can accept new data
+    AES_HASH_IO_BUF_CTRL_DATA_IN_AV =
+        0x00000002, // Start processing HASH_DATA_IN data
+    AES_HASH_IO_BUF_CTRL_OUTPUT_FULL =
+        0x00000001, // Output buffer registers available
   };
 
   // Bit fields for the AES_HASH_MODE_IN register
   enum {
-    AES_HASH_MODE_IN_SHA256_MODE = 0x00000008,
-    AES_HASH_MODE_IN_SHA256_MODE_S = 3,
-    AES_HASH_MODE_IN_NEW_HASH = 0x00000001,
-    AES_HASH_MODE_IN_NEW_HASH_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_LENGTH_IN_L register
-  enum {
-    AES_HASH_LENGTH_IN_L_LENGTH_IN = 0xFFFFFFFF,
-    AES_HASH_LENGTH_IN_L_LENGTH_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_LENGTH_IN_H register
-  enum {
-    AES_HASH_LENGTH_IN_H_LENGTH_IN = 0xFFFFFFFF,
-    AES_HASH_LENGTH_IN_H_LENGTH_IN_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DIGEST_A register
-  enum {
-    AES_HASH_DIGEST_A_HASH_DIGEST = 0xFFFFFFFF,
-    AES_HASH_DIGEST_A_HASH_DIGEST_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DIGEST_B register
-  enum {
-    AES_HASH_DIGEST_B_HASH_DIGEST = 0xFFFFFFFF,
-    AES_HASH_DIGEST_B_HASH_DIGEST_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DIGEST_C register
-  enum {
-    AES_HASH_DIGEST_C_HASH_DIGEST = 0xFFFFFFFF,
-    AES_HASH_DIGEST_C_HASH_DIGEST_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DIGEST_D register
-  enum {
-    AES_HASH_DIGEST_D_HASH_DIGEST = 0xFFFFFFFF,
-    AES_HASH_DIGEST_D_HASH_DIGEST_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DIGEST_E register
-  enum {
-    AES_HASH_DIGEST_E_HASH_DIGEST = 0xFFFFFFFF,
-    AES_HASH_DIGEST_E_HASH_DIGEST_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DIGEST_F register
-  enum {
-    AES_HASH_DIGEST_F_HASH_DIGEST = 0xFFFFFFFF,
-    AES_HASH_DIGEST_F_HASH_DIGEST_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DIGEST_G register
-  enum {
-    AES_HASH_DIGEST_G_HASH_DIGEST = 0xFFFFFFFF,
-    AES_HASH_DIGEST_G_HASH_DIGEST_S = 0,
-  };
-
-  // Bit fields for the AES_HASH_DIGEST_H register
-  enum {
-    AES_HASH_DIGEST_H_HASH_DIGEST = 0xFFFFFFFF,
-    AES_HASH_DIGEST_H_HASH_DIGEST_S = 0,
+    AES_HASH_MODE_IN_SHA256_MODE = 0x00000008, // Hash mode
+    AES_HASH_MODE_IN_NEW_HASH = 0x00000001,    // New hash session
   };
 
   // Bit fields for the AES_CTRL_ALG_SEL register
   enum {
-    AES_CTRL_ALG_SEL_TAG = 0x80000000,
-    AES_CTRL_ALG_SEL_TAG_S = 31,
-    AES_CTRL_ALG_SEL_HASH = 0x00000004,
-    AES_CTRL_ALG_SEL_HASH_S = 2,
-    AES_CTRL_ALG_SEL_AES = 0x00000002,
-    AES_CTRL_ALG_SEL_AES_S = 1,
-    AES_CTRL_ALG_SEL_KEYSTORE = 0x00000001,
-    AES_CTRL_ALG_SEL_KEYSTORE_S = 0,
+    AES_CTRL_ALG_SEL_TAG = 0x80000000,  // DMA operation includes TAG
+    AES_CTRL_ALG_SEL_HASH = 0x00000004, // Select hash engine as DMA destination
+    AES_CTRL_ALG_SEL_AES =
+        0x00000002, // Select AES engine as DMA source/destination
+    AES_CTRL_ALG_SEL_KEYSTORE =
+        0x00000001, // Select key store as DMA destination
   };
 
   // Bit fields for the AES_CTRL_PROT_EN register
   enum {
-    AES_CTRL_PROT_EN_PROT_EN = 0x00000001,
-    AES_CTRL_PROT_EN_PROT_EN_S = 0,
+    AES_CTRL_PROT_EN_PROT_EN =
+        0x00000001, // m_h_prot[1] asserted for DMA reads towards key store
   };
 
   // Bit fields for the AES_CTRL_SW_RESET register
   enum {
-    AES_CTRL_SW_RESET_SW_RESET = 0x00000001,
-    AES_CTRL_SW_RESET_SW_RESET_S = 0,
+    AES_CTRL_SW_RESET_SW_RESET =
+        0x00000001, // Reset master control and key store
   };
 
   // Bit fields for the AES_CTRL_INT_CFG register
   enum {
-    AES_CTRL_INT_CFG_LEVEL = 0x00000001,
-    AES_CTRL_INT_CFG_LEVEL_S = 0,
+    AES_CTRL_INT_CFG_LEVEL = 0x00000001, // Level interrupt type
   };
 
   // Bit fields for the AES_CTRL_INT_EN register
   enum {
-    AES_CTRL_INT_EN_DMA_IN_DONE = 0x00000002,
-    AES_CTRL_INT_EN_DMA_IN_DONE_S = 1,
-    AES_CTRL_INT_EN_RESULT_AV = 0x00000001,
-    AES_CTRL_INT_EN_RESULT_AV_S = 0,
+    AES_CTRL_INT_EN_DMA_IN_DONE =
+        0x00000002, // DMA input done interrupt enabled
+    AES_CTRL_INT_EN_RESULT_AV =
+        0x00000001, // Result available interrupt enabled
   };
 
   // Bit fields for the AES_CTRL_INT_CLR register
   enum {
-    AES_CTRL_INT_CLR_DMA_BUS_ERR = 0x80000000,
-    AES_CTRL_INT_CLR_DMA_BUS_ERR_S = 31,
-    AES_CTRL_INT_CLR_KEY_ST_WR_ERR = 0x40000000,
-    AES_CTRL_INT_CLR_KEY_ST_WR_ERR_S = 30,
-    AES_CTRL_INT_CLR_KEY_ST_RD_ERR = 0x20000000,
-    AES_CTRL_INT_CLR_KEY_ST_RD_ERR_S = 29,
-    AES_CTRL_INT_CLR_DMA_IN_DONE = 0x00000002,
-    AES_CTRL_INT_CLR_DMA_IN_DONE_S = 1,
-    AES_CTRL_INT_CLR_RESULT_AV = 0x00000001,
-    AES_CTRL_INT_CLR_RESULT_AV_S = 0,
+    AES_CTRL_INT_CLR_DMA_BUS_ERR = 0x80000000, // Clear DMA bus error status
+    AES_CTRL_INT_CLR_KEY_ST_WR_ERR =
+        0x40000000, // Clear key store write error status
+    AES_CTRL_INT_CLR_KEY_ST_RD_ERR =
+        0x20000000, // Clear key store read error status
+    AES_CTRL_INT_CLR_DMA_IN_DONE = 0x00000002, // Clear DMA in done interrupt
+    AES_CTRL_INT_CLR_RESULT_AV = 0x00000001, // Clear result available interrupt
   };
 
   // Bit fields for the AES_CTRL_INT_SET register
   enum {
-    AES_CTRL_INT_SET_DMA_IN_DONE = 0x00000002,
-    AES_CTRL_INT_SET_DMA_IN_DONE_S = 1,
-    AES_CTRL_INT_SET_RESULT_AV = 0x00000001,
-    AES_CTRL_INT_SET_RESULT_AV_S = 0,
+    AES_CTRL_INT_SET_DMA_IN_DONE = 0x00000002, // Set DMA data in done interrupt
+    AES_CTRL_INT_SET_RESULT_AV = 0x00000001,   // Set result available interrupt
   };
 
   // Bit fields for the AES_CTRL_INT_STAT register
   enum {
-    AES_CTRL_INT_STAT_DMA_BUS_ERR = 0x80000000,
-    AES_CTRL_INT_STAT_DMA_BUS_ERR_S = 31,
-    AES_CTRL_INT_STAT_KEY_ST_WR_ERR = 0x40000000,
-    AES_CTRL_INT_STAT_KEY_ST_WR_ERR_S = 30,
-    AES_CTRL_INT_STAT_KEY_ST_RD_ERR = 0x20000000,
-    AES_CTRL_INT_STAT_KEY_ST_RD_ERR_S = 29,
-    AES_CTRL_INT_STAT_DMA_IN_DONE = 0x00000002,
-    AES_CTRL_INT_STAT_DMA_IN_DONE_S = 1,
-    AES_CTRL_INT_STAT_RESULT_AV = 0x00000001,
-    AES_CTRL_INT_STAT_RESULT_AV_S = 0,
+    AES_CTRL_INT_STAT_DMA_BUS_ERR = 0x80000000,   // DMA bus error detected
+    AES_CTRL_INT_STAT_KEY_ST_WR_ERR = 0x40000000, // Write error detected
+    AES_CTRL_INT_STAT_KEY_ST_RD_ERR = 0x20000000, // Read error detected
+    AES_CTRL_INT_STAT_DMA_IN_DONE =
+        0x00000002, // DMA data in done interrupt status
+    AES_CTRL_INT_STAT_RESULT_AV =
+        0x00000001, // Result available interrupt status
   };
 
   // Bit fields for the AES_CTRL_OPTIONS register
   enum {
-    AES_CTRL_OPTIONS_TYPE = 0xFF000000,
-    AES_CTRL_OPTIONS_TYPE_S = 24,
-    AES_CTRL_OPTIONS_AHBINTERFACE = 0x00010000,
-    AES_CTRL_OPTIONS_AHBINTERFACE_S = 16,
-    AES_CTRL_OPTIONS_SHA_256 = 0x00000100,
-    AES_CTRL_OPTIONS_SHA_256_S = 8,
-    AES_CTRL_OPTIONS_AES_CCM = 0x00000080,
-    AES_CTRL_OPTIONS_AES_CCM_S = 7,
-    AES_CTRL_OPTIONS_AES_GCM = 0x00000040,
-    AES_CTRL_OPTIONS_AES_GCM_S = 6,
-    AES_CTRL_OPTIONS_AES_256 = 0x00000020,
-    AES_CTRL_OPTIONS_AES_256_S = 5,
-    AES_CTRL_OPTIONS_AES_128 = 0x00000010,
-    AES_CTRL_OPTIONS_AES_128_S = 4,
-    AES_CTRL_OPTIONS_HASH = 0x00000004,
-    AES_CTRL_OPTIONS_HASH_S = 2,
-    AES_CTRL_OPTIONS_AES = 0x00000002,
-    AES_CTRL_OPTIONS_AES_S = 1,
-    AES_CTRL_OPTIONS_KEYSTORE = 0x00000001,
-    AES_CTRL_OPTIONS_KEYSTORE_S = 0,
+    AES_CTRL_OPTIONS_TYPE = 0xFF000000,         // Device type mask
+    AES_CTRL_OPTIONS_AHBINTERFACE = 0x00010000, // AHB interface available
+    AES_CTRL_OPTIONS_SHA_256 = 0x00000100, // The HASH core supports SHA-256
+    AES_CTRL_OPTIONS_AES_CCM =
+        0x00000080, // AES-CCM available as single operation
+    AES_CTRL_OPTIONS_AES_GCM =
+        0x00000040, // AES-GCM available as single operation
+    AES_CTRL_OPTIONS_AES_256 = 0x00000020,  // AES core supports 256-bit keys
+    AES_CTRL_OPTIONS_AES_128 = 0x00000010,  // AES core supports 128-bit keys
+    AES_CTRL_OPTIONS_HASH = 0x00000004,     // HASH Core available
+    AES_CTRL_OPTIONS_AES = 0x00000002,      // AES core available
+    AES_CTRL_OPTIONS_KEYSTORE = 0x00000001, // Key store available
   };
 
   // Bit fields for the AES_CTRL_VERSION register
   enum {
-    AES_CTRL_VERSION_MAJOR_VERSION = 0x0F000000,
-    AES_CTRL_VERSION_MAJOR_VERSION_S = 24,
-    AES_CTRL_VERSION_MINOR_VERSION = 0x00F00000,
-    AES_CTRL_VERSION_MINOR_VERSION_S = 20,
-    AES_CTRL_VERSION_PATCH_LEVEL = 0x000F0000,
-    AES_CTRL_VERSION_PATCH_LEVEL_S = 16,
-    AES_CTRL_VERSION_EIP_NUMBER_COMPL = 0x0000FF00,
-    AES_CTRL_VERSION_EIP_NUMBER_COMPL_S = 8,
-    AES_CTRL_VERSION_EIP_NUMBER = 0x000000FF,
-    AES_CTRL_VERSION_EIP_NUMBER_S = 0,
-  };
-
-  // AES module operations
-  enum {
-    AES_NONE,
-    AES_KEYL0AD,
-    AES_ECB,
-    AES_CCM,
-    AES_SHA256,
-    AES_RNG,
+    AES_CTRL_VERSION_MAJOR_VERSION = 0x0F000000, // Major version number mask
+    AES_CTRL_VERSION_MINOR_VERSION = 0x00F00000, // Minor version number mask
+    AES_CTRL_VERSION_PATCH_LEVEL = 0x000F0000,   // Patch level mask
+    AES_CTRL_VERSION_EIP_NUMBER_COMPL =
+        0x0000FF00,                           // EIP_NUMBER 1's complement mask
+    AES_CTRL_VERSION_EIP_NUMBER = 0x000000FF, // EIP-120t EIP-number mask
   };
 
   // AES and SHA256 module return codes
@@ -747,9 +377,11 @@ private:
     AES_CCM_TEST_ERROR = 10,
   };
 
-  // Key store module constants
+  // Various size constants
   enum {
     STATE_SIZE_BYTES = 0x10,
+    IV_SIZE_BYTES = 0x10,
+    TAG_SIZE_BYTES = 0x10,
     KEY_SIZE_BYTES = 0x10,
     EXP_KEY_SIZE_BYTES = 0xb0,
     KEY_STORE_SIZE_BITS = 0x03,
@@ -778,211 +410,243 @@ private:
     return *(reinterpret_cast<volatile Reg32 *>(AES_BASE_ADDRESS + offset));
   }
 
+  // second parameter must be one of KEY_AREA_n values
   unsigned char aes_load_keys(const unsigned char *key,
-                              unsigned char key_location) {
-    static unsigned int aligned_key[4];
-    unsigned char i, *key_ptr = (unsigned char *)aligned_key;
+                              unsigned char key_location);
 
-    // key address needs to be 4 byte aligned
-    for (i = 0; i < KEY_SIZE_BYTES; ++i) {
-      key_ptr[i] = key[i];
-    }
+  // configure mode according to AES_AES_CTRL register
+  unsigned char aes_start(const unsigned char *in, unsigned char *out,
+                          unsigned char key_location, const unsigned char *iv,
+                          unsigned char mode);
 
-    // workaround for AES registers not retained after PM2
-    aes_reg(AES_CTRL_INT_CFG) = AES_CTRL_INT_CFG_LEVEL;
-    aes_reg(AES_CTRL_INT_EN) =
-        (AES_CTRL_INT_EN_DMA_IN_DONE | AES_CTRL_INT_EN_RESULT_AV);
+  // if result is available or error occurs returns true, else returns false
+  unsigned char aes_check_result();
 
-    // configure master control module
-    aes_reg(AES_CTRL_ALG_SEL) = AES_CTRL_ALG_SEL_KEYSTORE;
+  // this must be called strictly after aes_start
+  unsigned char aes_get_result();
 
-    // clear any outstanding events
-    aes_reg(AES_CTRL_INT_CLR) |=
-        (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
-
-    // configure key store module (areas, size)
-    // writing to this register resets AES_KEY_STORE_WRITTEN_AREA
-    aes_reg(AES_KEY_STORE_SIZE) = KEY_STORE_SIZE_128;
-
-    // enable key areas to write
-    aes_reg(AES_KEY_STORE_WRITE_AREA) = (0x00000001 << key_location);
-
-    // configure DMAC
-    // enable DMA channel 0
-    aes_reg(AES_DMAC_CH0_CTRL) |= 0x000000001;
-
-    // base address of the key in external memory
-    aes_reg(AES_DMAC_CH0_EXTADDR) = (unsigned int)key_ptr;
-
-    // total key length in bytes
-    // writing to this register starts the transfer if the channel is enabled
-    aes_reg(AES_DMAC_CH0_DMALENGTH) = 0x10;
-
-    // wait for operation to complete
-    while (!(aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_RESULT_AV))
-      ;
-
-    // check for absence of errors
-    if ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_DMA_BUS_ERR)) {
-      // error on the AHB master interface during a DMA operation
-      aes_reg(AES_CTRL_INT_CLR) |= AES_CTRL_INT_CLR_DMA_BUS_ERR;
-      aes_reg(AES_CTRL_ALG_SEL) = 0x00000000;
-      return AES_DMA_BUS_ERROR;
-    }
-
-    if ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_KEY_ST_WR_ERR)) {
-      // DMA operation does not cover a full area
-      // or more areas are written than expected
-      aes_reg(AES_CTRL_INT_CLR) |= AES_CTRL_INT_CLR_KEY_ST_WR_ERR;
-      aes_reg(AES_CTRL_ALG_SEL) = 0x00000000;
-      return AES_KEYSTORE_WRITE_ERROR;
-    }
-
-    // acknowledge the interrupt
-    aes_reg(AES_CTRL_INT_CLR) |=
-        (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
-
-    // disable master control / DMA clock
-    aes_reg(AES_CTRL_ALG_SEL) = 0x00000000;
-
-    // check status, if error return error code
-    if ((aes_reg(AES_KEY_STORE_WRITTEN_AREA) & 0x7) != 0x1) {
-      return AES_KEYSTORE_WRITE_ERROR;
-    }
-
-    for (i = 0; i < KEY_SIZE_BYTES; ++i) {
-      key_ptr[i] = 0;
-    }
-
-    return AES_SUCCESS;
-  }
-
-  unsigned char aes_ecb_start(const unsigned char *in, unsigned char *out,
-                              unsigned char key_location, bool encrypt) {
-    aes_reg(AES_CTRL_INT_CFG) = AES_CTRL_INT_CFG_LEVEL;
-    aes_reg(AES_CTRL_INT_EN) = AES_CTRL_INT_EN_RESULT_AV;
-
-    // configure the master control module
-    // enable the DMA path to the AES engine
-    aes_reg(AES_CTRL_ALG_SEL) = AES_CTRL_ALG_SEL_AES;
-
-    // clear any outstanding events
-    aes_reg(AES_CTRL_INT_CLR) |=
-        (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
-
-    aes_reg(AES_KEY_STORE_READ_AREA) = key_location;
-
-    // wait until key is loaded to the AES module
-    while (aes_reg(AES_KEY_STORE_READ_AREA) & AES_KEY_STORE_READ_AREA_BUSY)
-      ;
-
-    // check for key store read error
-    if ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_KEY_ST_RD_ERR)) {
-      // key location selected on the key store is not available
-      aes_reg(AES_CTRL_INT_CLR) |= AES_CTRL_INT_CLR_KEY_ST_RD_ERR;
-      return AES_KEYSTORE_READ_ERROR;
-    }
-
-    // configure AES engine
-    if (encrypt) {
-      // program AES-ECB-128 encryption and no IV
-      aes_reg(AES_AES_CTRL) = 0x0000000C;
-    } else {
-      // program AES-ECB-128 decryption and no IV
-      aes_reg(AES_AES_CTRL) = 0x00000008;
-    }
-
-    // write length of the message (lo)
-    aes_reg(AES_AES_C_LENGTH_0) = KEY_SIZE_BYTES;
-    // write length of the message (hi)
-    aes_reg(AES_AES_C_LENGTH_1) = 0;
-
-    // enable DMA channel 0
-    aes_reg(AES_DMAC_CH0_CTRL) = AES_DMAC_CH0_CTRL_EN;
-
-    // base address of the input data in external memory
-    aes_reg(AES_DMAC_CH0_EXTADDR) = (unsigned int)in;
-
-    // input data length in bytes, equal to the message
-    // writing to this register starts the transfer if the channel is enabled
-    aes_reg(AES_DMAC_CH0_DMALENGTH) = STATE_SIZE_BYTES;
-
-    // enable DMA channel 1
-    aes_reg(AES_DMAC_CH1_CTRL) = AES_DMAC_CH1_CTRL_EN;
-
-    // base address of the output data buffer
-    aes_reg(AES_DMAC_CH1_EXTADDR) = (unsigned int)out;
-
-    // output data length in bytes, equal to the result
-    // writing to this register starts the transfer if the channel is enabled
-    aes_reg(AES_DMAC_CH1_DMALENGTH) = STATE_SIZE_BYTES;
-
-    return AES_SUCCESS;
-  }
-
-  unsigned char aes_ecb_check_result() {
-    return ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_RESULT_AV) ||
-            (aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_DMA_BUS_ERR) ||
-            (aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_KEY_ST_WR_ERR) ||
-            (aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_KEY_ST_RD_ERR));
-  }
-
-  unsigned char aes_ecb_get_result() {
-    unsigned char errors = aes_reg(AES_CTRL_INT_STAT);
-
-    // clear errors
-    aes_reg(AES_CTRL_INT_CLR) =
-        (AES_CTRL_INT_CLR_DMA_BUS_ERR | AES_CTRL_INT_CLR_KEY_ST_WR_ERR |
-         AES_CTRL_INT_CLR_KEY_ST_RD_ERR);
-
-    // disable master control/DMA clock
-    aes_reg(AES_CTRL_ALG_SEL) = 0x00000000;
-
-    if (errors & AES_CTRL_INT_STAT_DMA_BUS_ERR) {
-      return AES_DMA_BUS_ERROR;
-    }
-
-    if (errors & AES_CTRL_INT_STAT_KEY_ST_WR_ERR) {
-      return AES_KEYSTORE_WRITE_ERROR;
-    }
-
-    if (errors & AES_CTRL_INT_STAT_KEY_ST_RD_ERR) {
-      return AES_KEYSTORE_READ_ERROR;
-    }
-
-    // acknowledge the interrupt
-    aes_reg(AES_CTRL_INT_CLR) |=
-        (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
-
-    // clear mode
-    aes_reg(AES_AES_CTRL) = 0x00000000;
-
-    return AES_SUCCESS;
-  }
-
+  // wrapper method for the above routines, debug these return codes if needed
   unsigned char crypt(const unsigned char *key, unsigned char loc,
-                      const unsigned char *in, unsigned char *out, bool mode) {
+                      const unsigned char *in, unsigned char *out,
+                      const unsigned char *iv, unsigned char mode) {
     unsigned char code = aes_load_keys(key, loc);
-    code |= aes_ecb_start(in, out, loc, mode);
+    code |= aes_start(in, out, loc, iv, mode);
 
-    while (!(aes_ecb_check_result()))
+    while (!(aes_check_result()))
       ;
-    code |= aes_ecb_get_result();
+    code |= aes_get_result();
 
     return code;
   }
 
 public:
+  // ECB is automatically selected if AES_AES_CTRL[28:5] are all zeroes
+  // one needs only to enable the direction bit (AES_AES_CTRL[2])
   void encrypt(const unsigned char *in, const unsigned char *key,
-               unsigned char *out, unsigned char key_location = KEY_AREA_0) {
-    crypt(key, key_location, in, out, true);
+               unsigned char *out, const unsigned char *iv = 0,
+               unsigned char mode = AES_AES_CTRL_DIRECTION,
+               unsigned char key_location = KEY_AREA_0) {
+    crypt(key, key_location, in, out, iv, mode);
   }
 
   void decrypt(const unsigned char *in, const unsigned char *key,
-               unsigned char *out, unsigned char key_location = KEY_AREA_0) {
-    crypt(key, key_location, in, out, false);
+               unsigned char *out, const unsigned char *iv = 0,
+               unsigned char mode = 0,
+               unsigned char key_location = KEY_AREA_0) {
+    crypt(key, key_location, in, out, iv, mode);
   }
 };
+
+template <unsigned int KEY_SIZE>
+unsigned char AES<KEY_SIZE>::aes_load_keys(const unsigned char *key,
+                                           unsigned char key_location) {
+  static unsigned int aligned_key[4];
+  unsigned char i, *key_ptr = (unsigned char *)aligned_key;
+
+  // key address needs to be 4 byte aligned
+  for (i = 0; i < KEY_SIZE_BYTES; ++i) {
+    key_ptr[i] = key[i];
+  }
+
+  // workaround for AES registers not retained after PM2
+  aes_reg(AES_CTRL_INT_CFG) = AES_CTRL_INT_CFG_LEVEL;
+  aes_reg(AES_CTRL_INT_EN) =
+      (AES_CTRL_INT_EN_DMA_IN_DONE | AES_CTRL_INT_EN_RESULT_AV);
+
+  // configure master control module
+  // enable the DMA path to the key store
+  aes_reg(AES_CTRL_ALG_SEL) = AES_CTRL_ALG_SEL_KEYSTORE;
+
+  // clear any outstanding events
+  aes_reg(AES_CTRL_INT_CLR) |=
+      (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
+
+  // configure key store module (areas, size)
+  // writing to this register resets AES_KEY_STORE_WRITTEN_AREA
+  aes_reg(AES_KEY_STORE_SIZE) = KEY_STORE_SIZE_128;
+
+  // enable key areas to write
+  aes_reg(AES_KEY_STORE_WRITE_AREA) = (0x00000001 << key_location);
+
+  // configure DMAC
+  // enable DMA channel 0
+  aes_reg(AES_DMAC_CH0_CTRL) |= 0x000000001;
+
+  // base address of the key in external memory
+  aes_reg(AES_DMAC_CH0_EXTADDR) = (unsigned int)key_ptr;
+
+  // total key length in bytes
+  // writing to this register starts the transfer if the channel is enabled
+  aes_reg(AES_DMAC_CH0_DMALENGTH) = 0x10;
+
+  // wait for operation to complete
+  while (!(aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_RESULT_AV))
+    ;
+
+  // check for absence of errors
+  if ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_DMA_BUS_ERR)) {
+    // error on the AHB master interface during a DMA operation
+    aes_reg(AES_CTRL_INT_CLR) |= AES_CTRL_INT_CLR_DMA_BUS_ERR;
+    aes_reg(AES_CTRL_ALG_SEL) = 0x00000000;
+    return AES_DMA_BUS_ERROR;
+  }
+
+  if ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_KEY_ST_WR_ERR)) {
+    // DMA operation does not cover a full area
+    // or more areas are written than expected
+    aes_reg(AES_CTRL_INT_CLR) |= AES_CTRL_INT_CLR_KEY_ST_WR_ERR;
+    aes_reg(AES_CTRL_ALG_SEL) = 0x00000000;
+    return AES_KEYSTORE_WRITE_ERROR;
+  }
+
+  // acknowledge the interrupt
+  aes_reg(AES_CTRL_INT_CLR) |=
+      (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
+
+  // disable master control / DMA clock
+  aes_reg(AES_CTRL_ALG_SEL) = 0x00000000;
+
+  // check status, if error return error code
+  if ((aes_reg(AES_KEY_STORE_WRITTEN_AREA) & 0x7) != 0x1) {
+    return AES_KEYSTORE_WRITE_ERROR;
+  }
+
+  for (i = 0; i < KEY_SIZE_BYTES; ++i) {
+    key_ptr[i] = 0;
+  }
+
+  return AES_SUCCESS;
+}
+
+template <unsigned int KEY_SIZE>
+unsigned char
+AES<KEY_SIZE>::aes_start(const unsigned char *in, unsigned char *out,
+                         unsigned char key_location, const unsigned char *iv,
+                         unsigned char mode) {
+  // workaround for AES registers not retained after PM2
+  aes_reg(AES_CTRL_INT_CFG) = AES_CTRL_INT_CFG_LEVEL;
+  aes_reg(AES_CTRL_INT_EN) =
+      (AES_CTRL_INT_EN_DMA_IN_DONE | AES_CTRL_INT_EN_RESULT_AV);
+
+  // configure the master control module
+  // enable the DMA path to the AES engine
+  aes_reg(AES_CTRL_ALG_SEL) = AES_CTRL_ALG_SEL_AES;
+
+  // clear any outstanding events
+  aes_reg(AES_CTRL_INT_CLR) |=
+      (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
+
+  aes_reg(AES_KEY_STORE_READ_AREA) = key_location;
+
+  // wait until key is loaded to the AES module
+  while (aes_reg(AES_KEY_STORE_READ_AREA) & AES_KEY_STORE_READ_AREA_BUSY)
+    ;
+
+  // check for key store read error
+  if ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_KEY_ST_RD_ERR)) {
+    // key location selected on the key store is not available
+    aes_reg(AES_CTRL_INT_CLR) |= AES_CTRL_INT_CLR_KEY_ST_RD_ERR;
+    return AES_KEYSTORE_READ_ERROR;
+  }
+
+  // write initialization vector
+  if (iv != 0) {
+    aes_reg(AES_AES_IV_0) = ((const unsigned int *)iv)[0];
+    aes_reg(AES_AES_IV_1) = ((const unsigned int *)iv)[1];
+    aes_reg(AES_AES_IV_2) = ((const unsigned int *)iv)[2];
+    aes_reg(AES_AES_IV_3) = ((const unsigned int *)iv)[3];
+  }
+
+  // program mode of operation
+  aes_reg(AES_AES_CTRL) = mode;
+
+  // write length of the message (lo)
+  aes_reg(AES_AES_C_LENGTH_0) = KEY_SIZE_BYTES;
+
+  // write length of the message (hi)
+  aes_reg(AES_AES_C_LENGTH_1) = 0;
+
+  // enable DMA channel 0
+  aes_reg(AES_DMAC_CH0_CTRL) = AES_DMAC_CH0_CTRL_EN;
+
+  // base address of the input data in external memory
+  aes_reg(AES_DMAC_CH0_EXTADDR) = (unsigned int)in;
+
+  // input data length in bytes, equal to the message
+  // writing to this register starts the transfer if the channel is enabled
+  aes_reg(AES_DMAC_CH0_DMALENGTH) = STATE_SIZE_BYTES;
+
+  // enable DMA channel 1
+  aes_reg(AES_DMAC_CH1_CTRL) = AES_DMAC_CH1_CTRL_EN;
+
+  // base address of the output data buffer
+  aes_reg(AES_DMAC_CH1_EXTADDR) = (unsigned int)out;
+
+  // output data length in bytes, equal to the result
+  // writing to this register starts the transfer if the channel is enabled
+  aes_reg(AES_DMAC_CH1_DMALENGTH) = STATE_SIZE_BYTES;
+
+  return AES_SUCCESS;
+}
+
+template <unsigned int KEY_SIZE>
+unsigned char AES<KEY_SIZE>::aes_check_result() {
+  return ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_RESULT_AV) ||
+          (aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_DMA_BUS_ERR) ||
+          (aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_KEY_ST_WR_ERR) ||
+          (aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_KEY_ST_RD_ERR));
+}
+
+template <unsigned int KEY_SIZE> unsigned char AES<KEY_SIZE>::aes_get_result() {
+  unsigned char errors = aes_reg(AES_CTRL_INT_STAT);
+
+  // clear errors
+  aes_reg(AES_CTRL_INT_CLR) =
+      (AES_CTRL_INT_CLR_DMA_BUS_ERR | AES_CTRL_INT_CLR_KEY_ST_WR_ERR |
+       AES_CTRL_INT_CLR_KEY_ST_RD_ERR);
+
+  // disable master control/DMA clock
+  aes_reg(AES_CTRL_ALG_SEL) = 0x00000000;
+
+  // check for absence of errors
+  if (errors & AES_CTRL_INT_STAT_DMA_BUS_ERR) {
+    return AES_DMA_BUS_ERROR;
+  }
+
+  if (errors & AES_CTRL_INT_STAT_KEY_ST_WR_ERR) {
+    return AES_KEYSTORE_WRITE_ERROR;
+  }
+
+  if (errors & AES_CTRL_INT_STAT_KEY_ST_RD_ERR) {
+    return AES_KEYSTORE_READ_ERROR;
+  }
+
+  // acknowledge the interrupt
+  aes_reg(AES_CTRL_INT_CLR) |=
+      (AES_CTRL_INT_CLR_DMA_IN_DONE | AES_CTRL_INT_CLR_RESULT_AV);
+
+  return AES_SUCCESS;
+}
 
 __END_SYS
 
