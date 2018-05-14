@@ -11,7 +11,7 @@ OStream cout;
 
 static const unsigned int CIPHER_BLOCK_SIZE = 16;
 static const unsigned int ITERATIONS = 256;
-static const unsigned int MSG_SIZE_MAX = 64;
+static const unsigned int MSG_SIZE_MAX = 64; // should be less than 512
 static const unsigned int INDENT_LEVEL = 16;
 
 typedef struct {
@@ -42,12 +42,12 @@ unsigned int test_random_vectors() {
   ex.sz = msg_len;
   cout << "Testing random vectors... " << endl;
   for (i = 0; i < ITERATIONS; ++i) {
-    for (j = 0; j < CIPHER_BLOCK_SIZE; j++) {
+    for (j = 0; j < CIPHER_BLOCK_SIZE; ++j) {
       ex.n[j] = Random::random();
       ex.k[j] = Random::random();
       ex.r[j] = Random::random();
     }
-    for (j = 0; j < msg_len; j++) {
+    for (j = 0; j < msg_len; ++j) {
       ex.m[j] = Random::random();
     }
 
