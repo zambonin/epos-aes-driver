@@ -12,7 +12,6 @@ OStream cout;
 static const unsigned int CIPHER_BLOCK_SIZE = 16;
 static const unsigned int ITERATIONS = 256;
 static const unsigned int MSG_SIZE_MAX = 64; // should be less than 512
-static const unsigned int INDENT_LEVEL = 16;
 
 typedef struct {
   unsigned char n[CIPHER_BLOCK_SIZE], k[CIPHER_BLOCK_SIZE],

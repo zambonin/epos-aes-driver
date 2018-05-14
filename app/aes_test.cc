@@ -10,8 +10,7 @@ OStream cout;
 
 static const unsigned int KEY_SIZE = 16;
 static const unsigned int ITERATIONS = 256;
-static const unsigned int MSG_SIZE_MAX = 64;
-static const unsigned int INDENT_LEVEL = 16;
+static const unsigned int MSG_SIZE_MAX = 64; // should be less than 512
 
 enum {
   AES_AES_CTRL_ECB = 0x0,
@@ -63,6 +62,8 @@ unsigned int test_random_vectors() {
       ok &= (ex.in[j] == orig[j]);
     }
 
+    fails += static_cast<unsigned int>(!ok);
+
     // test AES-CBC-128 mode
     p.encrypt(ex.in, ex.key, ex.out, ex.iv,
               AES_AES_CTRL_CBC | AES_AES_CTRL_DIRECTION);
@@ -89,7 +90,7 @@ unsigned int test_known_vectors() {
            0x11, 0x73, 0x93, 0x17, 0x2a},
           {0x3a, 0xd7, 0x7b, 0xb4, 0x0d, 0x7a, 0x36, 0x60, 0xa8, 0x9e, 0xca,
            0xf3, 0x24, 0x66, 0xef, 0x97},
-          0,
+          {0x00},
           AES_AES_CTRL_ECB | AES_AES_CTRL_DIRECTION,
       },
       {
@@ -99,7 +100,7 @@ unsigned int test_known_vectors() {
            0xac, 0x45, 0xaf, 0x8e, 0x51},
           {0xf5, 0xd3, 0xd5, 0x85, 0x03, 0xb9, 0x69, 0x9d, 0xe7, 0x85, 0x89,
            0x5a, 0x96, 0xfd, 0xba, 0xaf},
-          0,
+          {0x00},
           AES_AES_CTRL_ECB | AES_AES_CTRL_DIRECTION,
       },
       {
@@ -109,7 +110,7 @@ unsigned int test_known_vectors() {
            0x19, 0x1a, 0x0a, 0x52, 0xef},
           {0x43, 0xb1, 0xcd, 0x7f, 0x59, 0x8e, 0xce, 0x23, 0x88, 0x1b, 0x00,
            0xe3, 0xed, 0x03, 0x06, 0x88},
-          0,
+          {0x00},
           AES_AES_CTRL_ECB | AES_AES_CTRL_DIRECTION,
       },
       {
@@ -119,7 +120,7 @@ unsigned int test_known_vectors() {
            0x7b, 0xe6, 0x6c, 0x37, 0x10},
           {0x7b, 0x0c, 0x78, 0x5e, 0x27, 0xe8, 0xad, 0x3f, 0x82, 0x23, 0x20,
            0x71, 0x04, 0x72, 0x5d, 0xd4},
-          0,
+          {0x00},
           AES_AES_CTRL_ECB | AES_AES_CTRL_DIRECTION,
       },
       {
@@ -181,6 +182,12 @@ unsigned int test_known_vectors() {
     ok = true;
     for (j = 0; j < KEY_SIZE; ++j) {
       ok &= (result[j] == examples[i].out[j]);
+    }
+
+    p.decrypt(examples[i].out, examples[i].key, result, examples[i].iv,
+        examples[i].mode - AES_AES_CTRL_DIRECTION);
+    for (j = 0; j < KEY_SIZE; ++j) {
+      ok &= (result[j] == examples[i].in[j]);
     }
 
     fails += static_cast<unsigned int>(!ok);
