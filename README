@@ -6,7 +6,7 @@ Quick start:
  * install the following 32-bit libraries: zlib, bzip2, ncurses, gcc-libs
  * things that run on EPOSMote III are inside the `app` folder
  * compile with `make APPLICATION=$APP` (don't forget the traits header)
- * `run` and `flash` are useful rules (the former needs `qemu-system-x86`)
+ * `run` and `flash` are useful rules (the former needs `qemu-system-arm`)
  * check output from the board with `sudo cat /dev/ttyACM0`
  * `make -j veryclean` if anything goes wrong
 
