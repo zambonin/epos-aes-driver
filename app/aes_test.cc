@@ -12,14 +12,9 @@ static const unsigned int KEY_SIZE = 16;
 static const unsigned int ITERATIONS = 256;
 static const unsigned int MSG_SIZE_MAX = 64; // should be less than 512
 
-enum {
-  AES_AES_CTRL_ECB = 0x0,
-  AES_AES_CTRL_CBC = 0x20,
-  AES_AES_CTRL_DIRECTION = 0x4,
-};
-
 typedef struct {
-  unsigned char key[KEY_SIZE], in[KEY_SIZE], out[KEY_SIZE], iv[KEY_SIZE], mode;
+  unsigned char key[KEY_SIZE], in[KEY_SIZE], out[KEY_SIZE], iv[KEY_SIZE];
+  AES<KEY_SIZE>::Mode mode;
 } aes_example_test;
 
 unsigned int test_known_vectors(), test_random_vectors();
@@ -39,7 +34,7 @@ int main() {
 unsigned int test_random_vectors() {
   unsigned int i, j, index, fails = 0,
                             msg_len = Random::random() % (MSG_SIZE_MAX + 1);
-  AES<KEY_SIZE> p;
+  AES<KEY_SIZE> ecb, cbc(AES<KEY_SIZE>::CBC);
   aes_example_test ex;
   unsigned char orig[KEY_SIZE];
   bool ok;
@@ -53,9 +48,8 @@ unsigned int test_random_vectors() {
     }
 
     // test AES-ECB-128 mode
-    p.encrypt(ex.in, ex.key, ex.out, 0,
-              AES_AES_CTRL_ECB | AES_AES_CTRL_DIRECTION);
-    p.decrypt(ex.out, ex.key, orig, 0, AES_AES_CTRL_ECB);
+    ecb.encrypt(ex.in, ex.key, ex.out);
+    ecb.decrypt(ex.out, ex.key, orig);
 
     ok = true;
     for (j = 0; j < KEY_SIZE; ++j) {
@@ -65,9 +59,8 @@ unsigned int test_random_vectors() {
     fails += static_cast<unsigned int>(!ok);
 
     // test AES-CBC-128 mode
-    p.encrypt(ex.in, ex.key, ex.out, ex.iv,
-              AES_AES_CTRL_CBC | AES_AES_CTRL_DIRECTION);
-    p.decrypt(ex.out, ex.key, orig, ex.iv, AES_AES_CTRL_CBC);
+    cbc.encrypt(ex.in, ex.key, ex.out, ex.iv);
+    cbc.decrypt(ex.out, ex.key, orig, ex.iv);
 
     ok = true;
     for (j = 0; j < KEY_SIZE; ++j) {
@@ -91,7 +84,7 @@ unsigned int test_known_vectors() {
           {0x3a, 0xd7, 0x7b, 0xb4, 0x0d, 0x7a, 0x36, 0x60, 0xa8, 0x9e, 0xca,
            0xf3, 0x24, 0x66, 0xef, 0x97},
           {0x00},
-          AES_AES_CTRL_ECB | AES_AES_CTRL_DIRECTION,
+          AES<KEY_SIZE>::ECB,
       },
       {
           {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15,
@@ -101,7 +94,7 @@ unsigned int test_known_vectors() {
           {0xf5, 0xd3, 0xd5, 0x85, 0x03, 0xb9, 0x69, 0x9d, 0xe7, 0x85, 0x89,
            0x5a, 0x96, 0xfd, 0xba, 0xaf},
           {0x00},
-          AES_AES_CTRL_ECB | AES_AES_CTRL_DIRECTION,
+          AES<KEY_SIZE>::ECB,
       },
       {
           {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15,
@@ -111,7 +104,7 @@ unsigned int test_known_vectors() {
           {0x43, 0xb1, 0xcd, 0x7f, 0x59, 0x8e, 0xce, 0x23, 0x88, 0x1b, 0x00,
            0xe3, 0xed, 0x03, 0x06, 0x88},
           {0x00},
-          AES_AES_CTRL_ECB | AES_AES_CTRL_DIRECTION,
+          AES<KEY_SIZE>::ECB,
       },
       {
           {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15,
@@ -121,7 +114,7 @@ unsigned int test_known_vectors() {
           {0x7b, 0x0c, 0x78, 0x5e, 0x27, 0xe8, 0xad, 0x3f, 0x82, 0x23, 0x20,
            0x71, 0x04, 0x72, 0x5d, 0xd4},
           {0x00},
-          AES_AES_CTRL_ECB | AES_AES_CTRL_DIRECTION,
+          AES<KEY_SIZE>::ECB,
       },
       {
           {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15,
@@ -132,7 +125,7 @@ unsigned int test_known_vectors() {
            0x9b, 0x12, 0xe9, 0x19, 0x7d},
           {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a,
            0x0b, 0x0c, 0x0d, 0x0e, 0x0f},
-          AES_AES_CTRL_CBC | AES_AES_CTRL_DIRECTION,
+          AES<KEY_SIZE>::CBC,
       },
       {
           {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15,
@@ -143,7 +136,7 @@ unsigned int test_known_vectors() {
            0x3a, 0x91, 0x76, 0x78, 0xb2},
           {0x76, 0x49, 0xab, 0xac, 0x81, 0x19, 0xb2, 0x46, 0xce, 0xe9, 0x8e,
            0x9b, 0x12, 0xe9, 0x19, 0x7d},
-          AES_AES_CTRL_CBC | AES_AES_CTRL_DIRECTION,
+          AES<KEY_SIZE>::CBC,
       },
       {
           {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15,
@@ -154,7 +147,7 @@ unsigned int test_known_vectors() {
            0x9e, 0x22, 0x22, 0x95, 0x16},
           {0x50, 0x86, 0xcb, 0x9b, 0x50, 0x72, 0x19, 0xee, 0x95, 0xdb, 0x11,
            0x3a, 0x91, 0x76, 0x78, 0xb2},
-          AES_AES_CTRL_CBC | AES_AES_CTRL_DIRECTION,
+          AES<KEY_SIZE>::CBC,
       },
       {
           {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15,
@@ -165,27 +158,25 @@ unsigned int test_known_vectors() {
            0x30, 0x75, 0x86, 0xe1, 0xa7},
           {0x73, 0xbe, 0xd6, 0xb8, 0xe3, 0xc1, 0x74, 0x3b, 0x71, 0x16, 0xe6,
            0x9e, 0x22, 0x22, 0x95, 0x16},
-          AES_AES_CTRL_CBC | AES_AES_CTRL_DIRECTION,
+          AES<KEY_SIZE>::CBC,
       },
   };
 
   unsigned char result[KEY_SIZE];
   unsigned int fails = 0, i, j;
   bool ok;
-  AES<KEY_SIZE> p;
 
   cout << "Testing known vectors... " << endl;
   for (i = 0; i < sizeof(examples) / sizeof(examples[0]); ++i) {
-    p.encrypt(examples[i].in, examples[i].key, result, examples[i].iv,
-              examples[i].mode);
+    AES<KEY_SIZE> p(examples[i].mode);
+    p.encrypt(examples[i].in, examples[i].key, result, examples[i].iv);
 
     ok = true;
     for (j = 0; j < KEY_SIZE; ++j) {
       ok &= (result[j] == examples[i].out[j]);
     }
 
-    p.decrypt(examples[i].out, examples[i].key, result, examples[i].iv,
-        examples[i].mode - AES_AES_CTRL_DIRECTION);
+    p.decrypt(examples[i].out, examples[i].key, result, examples[i].iv);
     for (j = 0; j < KEY_SIZE; ++j) {
       ok &= (result[j] == examples[i].in[j]);
     }

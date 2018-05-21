@@ -418,6 +418,13 @@ private:
     KEY_AREA_7,
   };
 
+public:
+  enum Mode {
+    ECB,
+    CBC = AES_AES_CTRL_CBC,
+  };
+
+private:
   typedef CPU::Reg32 Reg32;
 
   static volatile Reg32 &aes_reg(unsigned int offset) {
@@ -442,9 +449,9 @@ private:
   // wrapper method for the above routines, debug these return codes if needed
   unsigned char crypt(const unsigned char *key, unsigned char loc,
                       const unsigned char *in, unsigned char *out,
-                      const unsigned char *iv, unsigned char mode) {
+                      const unsigned char *iv, unsigned char direction) {
     unsigned char code = aes_load_keys(key, loc);
-    code |= aes_start(in, out, loc, iv, mode);
+    code |= aes_start(in, out, loc, iv, _mode | direction);
 
     while (!(aes_check_result()))
       ;
@@ -453,21 +460,27 @@ private:
     return code;
   }
 
+  Mode _mode;
+
 public:
+  AES(const Mode & m = ECB): _mode(m) {
+    assert((m == ECB) || (m == CBC));
+  }
+
+  Mode mode() { return _mode; }
+
   // ECB is automatically selected if AES_AES_CTRL[28:5] are all zeroes
   // one needs only to enable the direction bit (AES_AES_CTRL[2])
   void encrypt(const unsigned char *in, const unsigned char *key,
                unsigned char *out, const unsigned char *iv = 0,
-               unsigned char mode = AES_AES_CTRL_DIRECTION,
                unsigned char key_location = KEY_AREA_0) {
-    crypt(key, key_location, in, out, iv, mode);
+    crypt(key, key_location, in, out, iv, AES_AES_CTRL_DIRECTION);
   }
 
   void decrypt(const unsigned char *in, const unsigned char *key,
                unsigned char *out, const unsigned char *iv = 0,
-               unsigned char mode = 0,
                unsigned char key_location = KEY_AREA_0) {
-    crypt(key, key_location, in, out, iv, mode);
+    crypt(key, key_location, in, out, iv, 0);
   }
 };
 
