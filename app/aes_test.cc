@@ -9,13 +9,18 @@ using namespace EPOS;
 OStream cout;
 
 static const unsigned int KEY_SIZE = 16;
-static const unsigned int ITERATIONS = 256;
-static const unsigned int MSG_SIZE_MAX = 64; // should be less than 512
+static const unsigned int ITERATIONS = 64;
+static const unsigned short MSG_SIZE_MAX = 1024;
+
+typedef struct {
+  unsigned char key[KEY_SIZE], in[MSG_SIZE_MAX], out[MSG_SIZE_MAX],
+      iv[KEY_SIZE];
+} aes_random_test;
 
 typedef struct {
   unsigned char key[KEY_SIZE], in[KEY_SIZE], out[KEY_SIZE], iv[KEY_SIZE];
   AES<KEY_SIZE>::Mode mode;
-} aes_example_test;
+} aes_known_test;
 
 unsigned int test_known_vectors(), test_random_vectors();
 
@@ -28,42 +33,55 @@ int main() {
   cout << "Iterations = " << ITERATIONS << endl;
   cout << "Maximum message size = " << MSG_SIZE_MAX << endl << endl;
 
-  return test_known_vectors() + test_random_vectors();
+  return test_random_vectors() + test_known_vectors();
 }
 
 unsigned int test_random_vectors() {
-  unsigned int i, j, index, fails = 0,
-                            msg_len = Random::random() % (MSG_SIZE_MAX + 1);
+  unsigned int i, j, index, fails = 0;
   AES<KEY_SIZE> ecb, cbc(AES<KEY_SIZE>::CBC);
-  aes_example_test ex;
-  unsigned char orig[KEY_SIZE];
+  aes_random_test ex;
+  unsigned char orig[MSG_SIZE_MAX], orig_iv[KEY_SIZE],
+      need_pad = MSG_SIZE_MAX % KEY_SIZE,
+      pad = (need_pad != 0) ? KEY_SIZE - need_pad : 0;
   bool ok;
 
   cout << "Testing random vectors... " << endl;
   for (i = 0; i < ITERATIONS; ++i) {
     for (j = 0; j < KEY_SIZE; ++j) {
       ex.key[j] = Random::random();
-      ex.in[j] = Random::random();
       ex.iv[j] = Random::random();
+    }
+    for (j = 0; j < MSG_SIZE_MAX; ++j) {
+      ex.in[j] = Random::random();
+    }
+
+    // pkcs#7 padding
+    for (j = MSG_SIZE_MAX; j < MSG_SIZE_MAX + pad; ++j) {
+      ex.in[j] = pad;
     }
 
     // test AES-ECB-128 mode
-    ecb.encrypt(ex.in, ex.key, ex.out);
-    ecb.decrypt(ex.out, ex.key, orig);
+    ecb.encrypt(ex.in, ex.key, ex.out, 0, MSG_SIZE_MAX + pad);
+    ecb.decrypt(ex.out, ex.key, orig, 0, MSG_SIZE_MAX + pad);
 
     ok = true;
-    for (j = 0; j < KEY_SIZE; ++j) {
+    for (j = 0; j < MSG_SIZE_MAX; ++j) {
       ok &= (ex.in[j] == orig[j]);
     }
 
     fails += static_cast<unsigned int>(!ok);
 
+    // it seems like the iv is modified when padding is considered
+    for (j = 0; j < KEY_SIZE; ++j) {
+      orig_iv[j] = ex.iv[j];
+    }
+
     // test AES-CBC-128 mode
-    cbc.encrypt(ex.in, ex.key, ex.out, ex.iv);
-    cbc.decrypt(ex.out, ex.key, orig, ex.iv);
+    cbc.encrypt(ex.in, ex.key, ex.out, ex.iv, MSG_SIZE_MAX + pad);
+    cbc.decrypt(ex.out, ex.key, orig, orig_iv, MSG_SIZE_MAX + pad);
 
     ok = true;
-    for (j = 0; j < KEY_SIZE; ++j) {
+    for (j = 0; j < MSG_SIZE_MAX; ++j) {
       ok &= (ex.in[j] == orig[j]);
     }
 
@@ -75,7 +93,7 @@ unsigned int test_random_vectors() {
 }
 
 unsigned int test_known_vectors() {
-  const aes_example_test examples[] = {
+  const aes_known_test examples[] = {
       {
           {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15,
            0x88, 0x09, 0xcf, 0x4f, 0x3c},

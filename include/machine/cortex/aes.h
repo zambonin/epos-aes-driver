@@ -393,11 +393,7 @@ private:
 
   // Various size constants
   enum {
-    STATE_SIZE_BYTES = 0x10,
-    IV_SIZE_BYTES = 0x10,
-    TAG_SIZE_BYTES = 0x10,
     KEY_SIZE_BYTES = 0x10,
-    EXP_KEY_SIZE_BYTES = 0xb0,
     KEY_STORE_SIZE_BITS = 0x03,
     KEY_STORE_SIZE_RES = 0x00,
     KEY_STORE_SIZE_128 = 0x01,
@@ -436,9 +432,10 @@ private:
                               unsigned char key_location);
 
   // configure mode according to AES_AES_CTRL register
+  // note that the message length is bound by AES_DMAC_CHx_DMALENGTH[15:0]
   unsigned char aes_start(const unsigned char *in, unsigned char *out,
-                          unsigned char key_location, const unsigned char *iv,
-                          unsigned char mode);
+                          const unsigned short msg_len, const unsigned char *iv,
+                          unsigned char key_location, unsigned char mode);
 
   // if result is available or error occurs returns true, else returns false
   unsigned char aes_check_result();
@@ -447,11 +444,12 @@ private:
   unsigned char aes_get_result();
 
   // wrapper method for the above routines, debug these return codes if needed
-  unsigned char crypt(const unsigned char *key, unsigned char loc,
-                      const unsigned char *in, unsigned char *out,
-                      const unsigned char *iv, unsigned char direction) {
+  unsigned char crypt(const unsigned char *key, const unsigned char *in,
+                      unsigned char *out, const unsigned short msg_len,
+                      const unsigned char *iv, unsigned char loc,
+                      unsigned char direction) {
     unsigned char code = aes_load_keys(key, loc);
-    code |= aes_start(in, out, loc, iv, _mode | direction);
+    code |= aes_start(in, out, msg_len, iv, loc, _mode | direction);
 
     while (!(aes_check_result()))
       ;
@@ -463,9 +461,7 @@ private:
   Mode _mode;
 
 public:
-  AES(const Mode & m = ECB): _mode(m) {
-    assert((m == ECB) || (m == CBC));
-  }
+  AES(const Mode &m = ECB) : _mode(m) { assert((m == ECB) || (m == CBC)); }
 
   Mode mode() { return _mode; }
 
@@ -473,14 +469,16 @@ public:
   // one needs only to enable the direction bit (AES_AES_CTRL[2])
   void encrypt(const unsigned char *in, const unsigned char *key,
                unsigned char *out, const unsigned char *iv = 0,
+               const unsigned short msg_len = 16,
                unsigned char key_location = KEY_AREA_0) {
-    crypt(key, key_location, in, out, iv, AES_AES_CTRL_DIRECTION);
+    crypt(key, in, out, msg_len, iv, key_location, AES_AES_CTRL_DIRECTION);
   }
 
   void decrypt(const unsigned char *in, const unsigned char *key,
                unsigned char *out, const unsigned char *iv = 0,
+               const unsigned short msg_len = 16,
                unsigned char key_location = KEY_AREA_0) {
-    crypt(key, key_location, in, out, iv, 0);
+    crypt(key, in, out, msg_len, iv, key_location, 0);
   }
 };
 
@@ -524,7 +522,7 @@ unsigned char AES<KEY_SIZE>::aes_load_keys(const unsigned char *key,
 
   // total key length in bytes
   // writing to this register starts the transfer if the channel is enabled
-  aes_reg(AES_DMAC_CH0_DMALENGTH) = 0x10;
+  aes_reg(AES_DMAC_CH0_DMALENGTH) = KEY_SIZE_BYTES;
 
   // wait for operation to complete
   while (!(aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_RESULT_AV))
@@ -568,8 +566,8 @@ unsigned char AES<KEY_SIZE>::aes_load_keys(const unsigned char *key,
 template <unsigned int KEY_SIZE>
 unsigned char
 AES<KEY_SIZE>::aes_start(const unsigned char *in, unsigned char *out,
-                         unsigned char key_location, const unsigned char *iv,
-                         unsigned char mode) {
+                         const unsigned short msg_len, const unsigned char *iv,
+                         unsigned char key_location, unsigned char mode) {
   // workaround for AES registers not retained after PM2
   aes_reg(AES_CTRL_INT_CFG) = AES_CTRL_INT_CFG_LEVEL;
   aes_reg(AES_CTRL_INT_EN) =
@@ -608,30 +606,32 @@ AES<KEY_SIZE>::aes_start(const unsigned char *in, unsigned char *out,
   aes_reg(AES_AES_CTRL) = mode;
 
   // write length of the message (lo)
-  aes_reg(AES_AES_C_LENGTH_0) = KEY_SIZE_BYTES;
+  aes_reg(AES_AES_C_LENGTH_0) = msg_len;
 
   // write length of the message (hi)
   aes_reg(AES_AES_C_LENGTH_1) = 0;
 
-  // enable DMA channel 0
-  aes_reg(AES_DMAC_CH0_CTRL) = AES_DMAC_CH0_CTRL_EN;
+  if (msg_len != 0) {
+    // enable DMA channel 0
+    aes_reg(AES_DMAC_CH0_CTRL) = AES_DMAC_CH0_CTRL_EN;
 
-  // base address of the input data in external memory
-  aes_reg(AES_DMAC_CH0_EXTADDR) = (unsigned int)in;
+    // base address of the input data in external memory
+    aes_reg(AES_DMAC_CH0_EXTADDR) = (unsigned int)in;
 
-  // input data length in bytes, equal to the message
-  // writing to this register starts the transfer if the channel is enabled
-  aes_reg(AES_DMAC_CH0_DMALENGTH) = STATE_SIZE_BYTES;
+    // input data length in bytes, equal to the message
+    // writing to this register starts the transfer if the channel is enabled
+    aes_reg(AES_DMAC_CH0_DMALENGTH) = msg_len;
 
-  // enable DMA channel 1
-  aes_reg(AES_DMAC_CH1_CTRL) = AES_DMAC_CH1_CTRL_EN;
+    // enable DMA channel 1
+    aes_reg(AES_DMAC_CH1_CTRL) = AES_DMAC_CH1_CTRL_EN;
 
-  // base address of the output data buffer
-  aes_reg(AES_DMAC_CH1_EXTADDR) = (unsigned int)out;
+    // base address of the output data buffer
+    aes_reg(AES_DMAC_CH1_EXTADDR) = (unsigned int)out;
 
-  // output data length in bytes, equal to the result
-  // writing to this register starts the transfer if the channel is enabled
-  aes_reg(AES_DMAC_CH1_DMALENGTH) = STATE_SIZE_BYTES;
+    // output data length in bytes, equal to the result
+    // writing to this register starts the transfer if the channel is enabled
+    aes_reg(AES_DMAC_CH1_DMALENGTH) = msg_len;
+  }
 
   return AES_SUCCESS;
 }
