@@ -210,11 +210,11 @@ public:
     class _Header
     {
         // Format
-        // Bit 0      3    5  6    0                0             0        0           0         0         0         0         0         0         0        0          
+        // Bit 0      3    5  6    0                0             0        0           0         0         0         0         0         0         0        0
         //     +------+----+--+----+----------------+-------------+--- ~ ---+--- ~ ----+--- ~ ---+--- ~ ---+--- ~ ---+--- ~ ---+--- ~ ---+--- ~ ---+--- ~ --+--- ~ ----+
         //     | ver  |type|tr|scal|   confidence   |   subtype   |   o.t   |   l.t    |   o.x   |   o.y   |   o.z   |   pad   |   l.x   |   l.y   |   l.z  |   pad    |
         //     +------+----+--+----+----------------+-------------+--- ~ ---+--- ~ ----+--- ~ ---+--- ~ ---+--- ~ ---+--- ~ ---+--- ~ ---+--- ~ ---+--- ~ --+--- ~ ----+
-        // Bits          8                  8              16          64        64      8/16/32   8/16/32   8/16/32    8/16/0   8/16/32   8/16/32   8/16/32   8/16/0 
+        // Bits          8                  8              16          64        64      8/16/32   8/16/32   8/16/32    8/16/0   8/16/32   8/16/32   8/16/32   8/16/0
 
     public:
         _Header(const Type & t, unsigned short st = Subtype::NONE, bool tr = false, unsigned char c = 0, const Time & ot = 0, const Coordinates & o = 0, const Coordinates & l = 0, const Version & v = V0)
@@ -724,13 +724,13 @@ public:
         void expiry(const Time & e) { _expiry = e - _time; }
 
         template<typename T>
-        void value(const T & v) { 
+        void value(const T & v) {
             *reinterpret_cast<Value<Unit::GET<T>::NUM> *>(&_data) = v;
         }
 
         template<typename T>
-        T value() { 
-            return *reinterpret_cast<Value<Unit::GET<T>::NUM> *>(&_data); 
+        T value() {
+            return *reinterpret_cast<Value<Unit::GET<T>::NUM> *>(&_data);
         }
 
         template<typename T>
@@ -784,7 +784,7 @@ public:
     typedef _UTIL::Array<unsigned char, 16> Node_ID;
     typedef _UTIL::Array<unsigned char, 16> Auth;
     typedef _UTIL::Array<unsigned char, 16> OTP;
-    typedef Diffie_Hellman<AES<KEY_SIZE>>::Public_Key Public_Key;
+    typedef Diffie_Hellman<_SYS::AES<KEY_SIZE>>::Public_Key Public_Key;
 
     // Diffie-Hellman Request Security Bootstrap Control Message
     class DH_Request: public Control
@@ -1373,8 +1373,8 @@ public:
         static const unsigned long long POLY_TIME_WINDOW = KEY_EXPIRY / 2;
 
     public:
-        typedef Diffie_Hellman<AES<KEY_SIZE>>::Shared_Key Master_Secret;
-        typedef Poly1305<AES<KEY_SIZE>> Poly;
+        typedef Diffie_Hellman<_SYS::AES<KEY_SIZE>>::Shared_Key Master_Secret;
+        typedef Poly1305<_SYS::AES<KEY_SIZE>> Poly;
 
     private:
         class Peer;
@@ -1732,10 +1732,10 @@ public:
         }
 
     private:
-        static AES<KEY_SIZE> _cipher;
+        static _SYS::AES<KEY_SIZE> _cipher;
         static Node_ID _id;
         static Auth _auth;
-        static Diffie_Hellman<AES<KEY_SIZE>> _dh;
+        static Diffie_Hellman<_SYS::AES<KEY_SIZE>> _dh;
         static Pending_Keys _pending_keys;
         static Peers _pending_peers;
         static Peers _trusted_peers;

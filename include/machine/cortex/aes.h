@@ -3,20 +3,6 @@
 #ifndef __cortex_aes_h
 #define __cortex_aes_h
 
-#include <aes.h>
-#include <system/config.h>
-
-#ifndef __mmod_emote3__
-
-__BEGIN_SYS
-
-template <unsigned int KEY_SIZE>
-class AES : public AES_Common::AES<KEY_SIZE> {};
-
-__END_SYS
-
-#else
-
 #include <cpu.h>
 
 __BEGIN_SYS
@@ -27,7 +13,7 @@ __BEGIN_SYS
  * - extend key size to 192 and 256 bits
  * - add other modes (CBC-MAC, CCM, CTR, GCM)
  */
-template <unsigned int KEY_SIZE> class AES : public AES_Common::AES<KEY_SIZE> {
+template <unsigned int KEY_LENGTH> class AES_Cortex {
 private:
   // AES base address according to the memory map (SWRU319C, pp. 156)
   enum {
@@ -415,10 +401,8 @@ private:
   };
 
 public:
-  enum Mode {
-    ECB,
-    CBC = AES_AES_CTRL_CBC,
-  };
+  static const typename IF<KEY_LENGTH == 16, unsigned int, void>::Result
+      KEY_SIZE = 16;
 
 private:
   typedef CPU::Reg32 Reg32;
@@ -458,12 +442,8 @@ private:
     return code;
   }
 
-  Mode _mode;
-
 public:
-  AES(const Mode &m = ECB) : _mode(m) { assert((m == ECB) || (m == CBC)); }
-
-  Mode mode() { return _mode; }
+  unsigned int _mode;
 
   // ECB is automatically selected if AES_AES_CTRL[28:5] are all zeroes
   // one needs only to enable the direction bit (AES_AES_CTRL[2])
@@ -482,9 +462,10 @@ public:
   }
 };
 
-template <unsigned int KEY_SIZE>
-unsigned char AES<KEY_SIZE>::aes_load_keys(const unsigned char *key,
-                                           unsigned char key_location) {
+template <unsigned int KEY_LENGTH>
+unsigned char
+AES_Cortex<KEY_LENGTH>::aes_load_keys(const unsigned char *key,
+                                      unsigned char key_location) {
   static unsigned int aligned_key[4];
   unsigned char i, *key_ptr = (unsigned char *)aligned_key;
 
@@ -563,11 +544,10 @@ unsigned char AES<KEY_SIZE>::aes_load_keys(const unsigned char *key,
   return AES_SUCCESS;
 }
 
-template <unsigned int KEY_SIZE>
-unsigned char
-AES<KEY_SIZE>::aes_start(const unsigned char *in, unsigned char *out,
-                         const unsigned short msg_len, const unsigned char *iv,
-                         unsigned char key_location, unsigned char mode) {
+template <unsigned int KEY_LENGTH>
+unsigned char AES_Cortex<KEY_LENGTH>::aes_start(
+    const unsigned char *in, unsigned char *out, const unsigned short msg_len,
+    const unsigned char *iv, unsigned char key_location, unsigned char mode) {
   // workaround for AES registers not retained after PM2
   aes_reg(AES_CTRL_INT_CFG) = AES_CTRL_INT_CFG_LEVEL;
   aes_reg(AES_CTRL_INT_EN) =
@@ -636,15 +616,16 @@ AES<KEY_SIZE>::aes_start(const unsigned char *in, unsigned char *out,
   return AES_SUCCESS;
 }
 
-template <unsigned int KEY_SIZE>
-unsigned char AES<KEY_SIZE>::aes_check_result() {
+template <unsigned int KEY_LENGTH>
+unsigned char AES_Cortex<KEY_LENGTH>::aes_check_result() {
   return ((aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_RESULT_AV) ||
           (aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_DMA_BUS_ERR) ||
           (aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_KEY_ST_WR_ERR) ||
           (aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_KEY_ST_RD_ERR));
 }
 
-template <unsigned int KEY_SIZE> unsigned char AES<KEY_SIZE>::aes_get_result() {
+template <unsigned int KEY_LENGTH>
+unsigned char AES_Cortex<KEY_LENGTH>::aes_get_result() {
   unsigned char errors = aes_reg(AES_CTRL_INT_STAT);
 
   // clear errors
@@ -676,7 +657,5 @@ template <unsigned int KEY_SIZE> unsigned char AES<KEY_SIZE>::aes_get_result() {
 }
 
 __END_SYS
-
-#endif
 
 #endif

@@ -228,10 +228,10 @@ TSTP::Router::~Router()
 
 // TSTP::Security
 // Class attributes
-AES<TSTP::KEY_SIZE> TSTP::Security::_cipher;
+_SYS::AES<TSTP::KEY_SIZE> TSTP::Security::_cipher;
 TSTP::Node_ID TSTP::Security::_id;
 TSTP::Auth TSTP::Security::_auth;
-Diffie_Hellman<AES<TSTP::KEY_SIZE>> TSTP::Security::_dh;
+Diffie_Hellman<_SYS::AES<TSTP::KEY_SIZE>> TSTP::Security::_dh;
 TSTP::Security::Pending_Keys TSTP::Security::_pending_keys;
 TSTP::Security::Peers TSTP::Security::_pending_peers;
 TSTP::Security::Peers TSTP::Security::_trusted_peers;

@@ -13,6 +13,8 @@ static const unsigned int CIPHER_BLOCK_SIZE = 16;
 static const unsigned int ITERATIONS = 256;
 static const unsigned int MSG_SIZE_MAX = 512;
 
+typedef _SYS::AES<CIPHER_BLOCK_SIZE> _AES;
+
 typedef struct {
   unsigned char n[CIPHER_BLOCK_SIZE], k[CIPHER_BLOCK_SIZE],
       r[CIPHER_BLOCK_SIZE], expected[CIPHER_BLOCK_SIZE], m[MSG_SIZE_MAX], sz;
@@ -35,7 +37,7 @@ int main() {
 unsigned int test_random_vectors() {
   unsigned int i, j, index, fails = 0,
                             msg_len = Random::random() % (MSG_SIZE_MAX + 1);
-  Poly1305<AES<CIPHER_BLOCK_SIZE>> p;
+  Poly1305<_AES> p;
   poly1305_example_test ex;
 
   ex.sz = msg_len;
@@ -144,7 +146,7 @@ unsigned int test_known_vectors() {
   unsigned char out[CIPHER_BLOCK_SIZE];
   unsigned int fails = 0, i, j;
   bool ok;
-  Poly1305<AES<CIPHER_BLOCK_SIZE>> p;
+  Poly1305<_AES> p;
 
   cout << "Testing known vectors... " << endl;
   for (i = 0; i < sizeof(examples) / sizeof(examples[0]); ++i) {
