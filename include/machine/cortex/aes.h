@@ -14,6 +14,10 @@ __BEGIN_SYS
  * - add other modes (CBC-MAC, CCM, CTR, GCM)
  */
 template <unsigned int KEY_LENGTH> class AES_Cortex {
+public:
+  static const typename IF<KEY_LENGTH == 16, unsigned int, void>::Result
+      KEY_SIZE = 16;
+
 private:
   // AES base address according to the memory map (SWRU319C, pp. 156)
   enum {
@@ -400,12 +404,42 @@ private:
     KEY_AREA_7,
   };
 
+  typedef CPU::Reg32 Reg32;
+
 public:
-  static const typename IF<KEY_LENGTH == 16, unsigned int, void>::Result
-      KEY_SIZE = 16;
+  AES_Cortex(const unsigned int m) {
+    switch (m) {
+    case 1:
+      _mode = AES_AES_CTRL_CBC;
+      break;
+    default:
+      _mode = 0;
+    }
+  }
+
+  unsigned int mode() { return _mode; }
+
+  // ECB is automatically selected if AES_AES_CTRL[28:5] are all zeroes
+  // one needs only to enable the direction bit (AES_AES_CTRL[2])
+  void encrypt(const unsigned char *in, const unsigned char *key,
+               unsigned char *out, const unsigned char *iv = 0,
+               const unsigned short msg_len = 16,
+               unsigned char key_location = KEY_AREA_0) {
+    crypt(key, in, out, msg_len, iv, key_location, AES_AES_CTRL_DIRECTION);
+  }
+
+  void decrypt(const unsigned char *in, const unsigned char *key,
+               unsigned char *out, const unsigned char *iv = 0,
+               const unsigned short msg_len = 16,
+               unsigned char key_location = KEY_AREA_0) {
+    crypt(key, in, out, msg_len, iv, key_location, 0);
+  }
 
 private:
-  typedef CPU::Reg32 Reg32;
+  void mode(const unsigned int m) {
+    assert(m < 2);
+    _mode = m;
+  }
 
   static volatile Reg32 &aes_reg(unsigned int offset) {
     return *(reinterpret_cast<volatile Reg32 *>(AES_BASE_ADDRESS + offset));
@@ -442,24 +476,8 @@ private:
     return code;
   }
 
-public:
+private:
   unsigned int _mode;
-
-  // ECB is automatically selected if AES_AES_CTRL[28:5] are all zeroes
-  // one needs only to enable the direction bit (AES_AES_CTRL[2])
-  void encrypt(const unsigned char *in, const unsigned char *key,
-               unsigned char *out, const unsigned char *iv = 0,
-               const unsigned short msg_len = 16,
-               unsigned char key_location = KEY_AREA_0) {
-    crypt(key, in, out, msg_len, iv, key_location, AES_AES_CTRL_DIRECTION);
-  }
-
-  void decrypt(const unsigned char *in, const unsigned char *key,
-               unsigned char *out, const unsigned char *iv = 0,
-               const unsigned short msg_len = 16,
-               unsigned char key_location = KEY_AREA_0) {
-    crypt(key, in, out, msg_len, iv, key_location, 0);
-  }
 };
 
 template <unsigned int KEY_LENGTH>

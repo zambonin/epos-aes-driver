@@ -19,14 +19,11 @@ template <unsigned int KEY_SIZE> struct AES_Impl {
 template <unsigned int KEY_SIZE> class AES : public AES_Impl<KEY_SIZE>::type {
 public:
   enum Mode {
-    ECB = 0x00,
-    CBC = 0x20,
+    ECB,
+    CBC,
   };
 
-  AES(const Mode &m = ECB) {
-    assert((m == ECB) || (m == CBC));
-    this->_mode = static_cast<unsigned int>(m);
-  }
+  AES(const Mode &m = ECB) : AES_Impl<KEY_SIZE>::type(m) {}
 };
 
 __END_SYS

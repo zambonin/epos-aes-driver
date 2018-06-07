@@ -9,6 +9,10 @@
 __BEGIN_UTIL
 
 template <unsigned int KEY_LENGTH = 16> class AES {
+public:
+  static const typename IF<KEY_LENGTH == 16, unsigned int, void>::Result
+      KEY_SIZE = 16; // KEY_SIZE must be 16
+
 private:
   static const unsigned int Nb = 4; // number of columns comprising a _state
   static const unsigned int Nk = 4; // number of 32 bit words in a key
@@ -18,10 +22,9 @@ private:
       State[4][4]; // array holding the intermediate results during decryption
 
 public:
-  static const typename IF<KEY_LENGTH == 16, unsigned int, void>::Result
-      KEY_SIZE = 16; // KEY_SIZE must be 16
+  AES(const unsigned int m) : _mode(m) {}
 
-  unsigned int _mode;
+  unsigned int mode() { return _mode; }
 
   void encrypt(const unsigned char *data, const unsigned char *key,
                unsigned char *result, const unsigned char *iv = 0,
@@ -37,21 +40,13 @@ public:
   }
 
 private:
-  void crypt(const unsigned char *data, const unsigned char *key,
-             unsigned char *result, bool encrypt) {
-    db<AES>(TRC) << "AES::" << (encrypt ? "en" : "de") << "crypt(data=" << data
-                 << ",key=" << key << ",result=" << result << endl;
-    db<AES>(INF) << "AES::" << (encrypt ? "en" : "de") << "crypt:data = {"
-                 << int(data[0]);
-    for (unsigned int i = 1; i < 16; i++)
-      db<AES>(INF) << "," << int(data[i]);
-    db<AES>(INF) << "}" << endl;
-    db<AES>(INF) << "AES::" << (encrypt ? "en" : "de") << "crypt:key = {"
-                 << int(key[0]);
-    for (unsigned int i = 1; i < 16; i++)
-      db<AES>(INF) << "," << int(key[i]);
-    db<AES>(INF) << "}" << endl;
+  void mode(const unsigned int m) {
+    assert(m < 2);
+    _mode = m;
+  }
 
+  void crypt(const unsigned char *data, const unsigned char *key,
+      unsigned char *result, bool encrypt) {
     if (_mode > 0) {
       if (encrypt)
         aes128_cbc_encrypt_buffer(result, data, 16, key, iv);
@@ -63,12 +58,6 @@ private:
       else
         aes128_ebc_decrypt(data, key, result);
     }
-
-    db<AES>(INF) << "AES::" << (encrypt ? "en" : "de") << "crypt:result = {"
-                 << int(result[0]);
-    for (unsigned int i = 1; i < 16; i++)
-      db<AES>(INF) << "," << int(result[i]);
-    db<AES>(INF) << "}" << endl;
   }
 
   void aes128_cbc_encrypt_buffer(unsigned char *output,
@@ -114,6 +103,7 @@ private:
   }
 
 private:
+  unsigned int _mode;
   State *_state;
   unsigned char _round_key[176];
   const unsigned char *_key;
