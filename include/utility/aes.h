@@ -90,7 +90,7 @@ private:
   void inv_cipher(void);
 
   void block_copy(unsigned char *output, const unsigned char *input) {
-    memcpy(output, input, KEY_SIZE);
+    memcpy(output, input, KEY_LENGTH);
   }
 
   unsigned char xtime(unsigned char x) {
@@ -104,7 +104,7 @@ private:
   }
 
   void xor_with_iv(unsigned char *buf) {
-    for (unsigned int i = 0; i < KEY_SIZE; ++i)
+    for (unsigned int i = 0; i < KEY_LENGTH; ++i)
       buf[i] ^= _iv[i];
   }
 

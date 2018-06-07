@@ -11,14 +11,19 @@
 
 __BEGIN_SYS
 
-template <unsigned int KEY_SIZE> class AES : public AES_Util<KEY_SIZE> {
+template <unsigned int KEY_SIZE> struct AES_Impl {
+  typedef typename IF<Traits<Build>::MODEL == Traits<Build>::eMote3,
+                      AES_Cortex<KEY_SIZE>, AES_Util<KEY_SIZE>>::Result type;
+};
+
+template <unsigned int KEY_SIZE> class AES : public AES_Impl<KEY_SIZE>::type {
 public:
   enum Mode {
     ECB,
     CBC,
   };
 
-  AES(const Mode &m = ECB) : AES_Util<KEY_SIZE>(m) {}
+  AES(const Mode &m = ECB) : AES_Impl<KEY_SIZE>::type(m) {}
 };
 
 __END_SYS
