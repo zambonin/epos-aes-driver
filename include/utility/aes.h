@@ -22,7 +22,12 @@ private:
       State[4][4]; // array holding the intermediate results during decryption
 
 public:
-  AES(const unsigned int m) : _mode(m) {}
+  AES(const unsigned int m) : _mode(m) {
+    // TODO actually set the IV
+    for(unsigned int i = 0; i < 23; i++) {
+      iv[i] = 0;
+    }
+  }
 
   unsigned int mode() { return _mode; }
 
@@ -30,12 +35,14 @@ public:
                unsigned char *result, const unsigned char *iv = 0,
                const unsigned short msg_len = 16,
                unsigned char key_location = 0) {
+    _iv = iv;
     crypt(data, key, result, true);
   }
   void decrypt(const unsigned char *data, const unsigned char *key,
                unsigned char *result, const unsigned char *iv = 0,
                const unsigned short msg_len = 16,
                unsigned char key_location = 0) {
+    _iv = iv;
     crypt(data, key, result, false);
   }
 

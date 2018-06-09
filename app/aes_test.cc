@@ -9,8 +9,9 @@ using namespace EPOS;
 OStream cout;
 
 static const unsigned int KEY_SIZE = 16;
-static const unsigned int ITERATIONS = 64;
-static const unsigned short MSG_SIZE_MAX = 1024;
+static const unsigned int ITERATIONS = 512;
+static const unsigned short MSG_SIZE = 438;
+static const unsigned int MSG_SIZE_MAX = MSG_SIZE + (KEY_SIZE - (MSG_SIZE % KEY_SIZE));
 
 typedef _SYS::AES<KEY_SIZE> _AES;
 
@@ -42,9 +43,7 @@ unsigned int test_random_vectors() {
   unsigned int i, j, index, fails = 0;
   _AES ecb, cbc(_AES::CBC);
   aes_random_test ex;
-  unsigned char orig[MSG_SIZE_MAX], orig_iv[KEY_SIZE],
-      need_pad = MSG_SIZE_MAX % KEY_SIZE,
-      pad = (need_pad != 0) ? KEY_SIZE - need_pad : 0;
+  unsigned char orig_iv[KEY_SIZE], orig[MSG_SIZE_MAX];
   bool ok;
 
   cout << "Testing random vectors... " << endl;
@@ -58,13 +57,13 @@ unsigned int test_random_vectors() {
     }
 
     // pkcs#7 padding
-    for (j = MSG_SIZE_MAX; j < MSG_SIZE_MAX + pad; ++j) {
-      ex.in[j] = pad;
+    for (j = MSG_SIZE; j < MSG_SIZE_MAX; ++j) {
+      ex.in[j] = MSG_SIZE_MAX - MSG_SIZE;
     }
 
     // test AES-ECB-128 mode
-    ecb.encrypt(ex.in, ex.key, ex.out, 0, MSG_SIZE_MAX + pad);
-    ecb.decrypt(ex.out, ex.key, orig, 0, MSG_SIZE_MAX + pad);
+    ecb.encrypt(ex.in, ex.key, ex.out, 0, MSG_SIZE_MAX);
+    ecb.decrypt(ex.out, ex.key, orig, 0, MSG_SIZE_MAX);
 
     ok = true;
     for (j = 0; j < MSG_SIZE_MAX; ++j) {
@@ -79,8 +78,8 @@ unsigned int test_random_vectors() {
     }
 
     // test AES-CBC-128 mode
-    cbc.encrypt(ex.in, ex.key, ex.out, ex.iv, MSG_SIZE_MAX + pad);
-    cbc.decrypt(ex.out, ex.key, orig, orig_iv, MSG_SIZE_MAX + pad);
+    cbc.encrypt(ex.in, ex.key, ex.out, ex.iv, MSG_SIZE_MAX);
+    cbc.decrypt(ex.out, ex.key, orig, orig_iv, MSG_SIZE_MAX);
 
     ok = true;
     for (j = 0; j < MSG_SIZE_MAX; ++j) {
