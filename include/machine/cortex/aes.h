@@ -383,7 +383,6 @@ private:
 
   // Various size constants
   enum {
-    KEY_SIZE_BYTES = 0x10,
     KEY_STORE_SIZE_BITS = 0x03,
     KEY_STORE_SIZE_RES = 0x00,
     KEY_STORE_SIZE_128 = 0x01,
@@ -488,7 +487,7 @@ AES_Cortex<KEY_LENGTH>::aes_load_keys(const unsigned char *key,
   unsigned char i, *key_ptr = (unsigned char *)aligned_key;
 
   // key address needs to be 4 byte aligned
-  for (i = 0; i < KEY_SIZE_BYTES; ++i) {
+  for (i = 0; i < KEY_LENGTH; ++i) {
     key_ptr[i] = key[i];
   }
 
@@ -521,7 +520,7 @@ AES_Cortex<KEY_LENGTH>::aes_load_keys(const unsigned char *key,
 
   // total key length in bytes
   // writing to this register starts the transfer if the channel is enabled
-  aes_reg(AES_DMAC_CH0_DMALENGTH) = KEY_SIZE_BYTES;
+  aes_reg(AES_DMAC_CH0_DMALENGTH) = KEY_LENGTH;
 
   // wait for operation to complete
   while (!(aes_reg(AES_CTRL_INT_STAT) & AES_CTRL_INT_STAT_RESULT_AV))
@@ -555,7 +554,7 @@ AES_Cortex<KEY_LENGTH>::aes_load_keys(const unsigned char *key,
     return AES_KEYSTORE_WRITE_ERROR;
   }
 
-  for (i = 0; i < KEY_SIZE_BYTES; ++i) {
+  for (i = 0; i < KEY_LENGTH; ++i) {
     key_ptr[i] = 0;
   }
 
