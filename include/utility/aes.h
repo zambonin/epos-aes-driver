@@ -22,11 +22,7 @@ private:
       State[4][4]; // array holding the intermediate results during decryption
 
 public:
-  AES_Util(const unsigned int m) : _mode(m) {
-    for (unsigned int i = 0; i < 23; i++) {
-      iv[i] = 0;
-    }
-  }
+  AES_Util(const unsigned int m) : _mode(m) {}
 
   unsigned int mode() { return _mode; }
 
@@ -53,6 +49,9 @@ private:
 
   void crypt(const unsigned char *data, const unsigned char *key,
              unsigned char *result, bool encrypt) {
+    for (unsigned int i = 0; i < KEY_SIZE; i++) {
+      iv[i] = _iv[i];
+    }
     if (_mode > 0) {
       if (encrypt)
         aes128_cbc_encrypt_buffer(result, data, 16, key, iv);

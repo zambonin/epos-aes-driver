@@ -8,11 +8,13 @@ using namespace EPOS;
 
 OStream cout;
 
+#define UMOD(x, y)    (((x) % (y) == 0) ? (y) : (x) % (y))
+
 static const unsigned int KEY_SIZE = 16;
 static const unsigned int ITERATIONS = 512;
 static const unsigned short MSG_SIZE = 16;
 static const unsigned int MSG_SIZE_MAX =
-    MSG_SIZE + (KEY_SIZE - (MSG_SIZE % KEY_SIZE));
+    MSG_SIZE + KEY_SIZE - UMOD(MSG_SIZE, KEY_SIZE);
 
 typedef struct {
   unsigned char key[KEY_SIZE], in[MSG_SIZE_MAX], out[MSG_SIZE_MAX],
